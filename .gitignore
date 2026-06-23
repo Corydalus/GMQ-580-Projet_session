@@ -34,6 +34,18 @@ outputs/models/
 *.pkl
 
 # ════════════════════════════════════════════════════════════════════════════
+#  DOCUMENTS DE TRAVAIL / RECHERCHE — non nécessaires au code ni à sa compréhension
+#  Tous les .md sont ignorés SAUF README.md (page d'accueil + livrable du prof).
+#  → couvre CLAUDE.md, methodologie_pour_README.md, rapport/rapport.md,
+#    et tous les .md de Recherche documentaire/.
+# ════════════════════════════════════════════════════════════════════════════
+*.md
+!/README.md
+
+# Dossier de recherche complet (inclut aussi .docx, .html, .csv, .qmd)
+/Recherche documentaire/
+
+# ════════════════════════════════════════════════════════════════════════════
 #  Python
 # ════════════════════════════════════════════════════════════════════════════
 __pycache__/
