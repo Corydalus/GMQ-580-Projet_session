@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SDM — Flux de traitement | Engoulevent bois-pourri</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #0a0e17;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --border: #2a3550;
+  --text: #e2e8f0;
+  --text-dim: #8896b0;
+  --accent1: #6366f1;
+  --accent2: #818cf8;
+  --accent3: #a5b4fc;
+  --green: #34d399;
+  --green-dim: #065f46;
+  --orange: #f59e0b;
+  --orange-dim: #92400e;
+  --red: #f87171;
+  --cyan: #22d3ee;
+  --pink: #f472b6;
+  --purple: #c084fc;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+.container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 40px 30px 80px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 50px;
+  position: relative;
+}
+
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent1), transparent);
+}
+
+.header .badge {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--accent1), var(--purple));
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 5px 16px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+}
+
+.header h1 {
+  font-size: 2.6em;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent3), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+}
+
+.header .subtitle {
+  font-size: 1.1em;
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.header .subtitle span {
+  color: var(--green);
+  font-weight: 600;
+}
+
+.concept-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 30px 35px;
+  margin-bottom: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.concept-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, var(--accent1), var(--cyan));
+}
+
+.concept-card h2 {
+  font-size: 1.2em;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--accent3);
+}
+
+.concept-card p {
+  color: var(--text-dim);
+  font-size: 0.95em;
+  max-width: 800px;
+}
+
+.concept-card .formula {
+  margin-top: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1em;
+  text-align: center;
+  color: var(--cyan);
+  letter-spacing: 0.5px;
+}
+
+.formula .highlight-green { color: var(--green); font-weight: 600; }
+.formula .highlight-orange { color: var(--orange); font-weight: 600; }
+.formula .highlight-pink { color: var(--pink); font-weight: 600; }
+
+.section-title {
+  font-size: 1.5em;
+  font-weight: 800;
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-title .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--accent1), var(--purple));
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.pipeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+}
+
+.pipeline::before {
+  content: '';
+  position: absolute;
+  left: 49px;
+  top: 30px;
+  bottom: 30px;
+  width: 3px;
+  background: linear-gradient(to bottom, var(--accent1), var(--cyan), var(--green), var(--orange));
+  border-radius: 2px;
+  opacity: 0.5;
+}
+
+.pipeline-step {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  position: relative;
+  padding-bottom: 28px;
+}
+
+.pipeline-step:last-child { padding-bottom: 0; }
+
+.step-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.step-icon.purple { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
+.step-icon.blue { background: linear-gradient(135deg, #2563eb, #0ea5e9); }
+.step-icon.cyan { background: linear-gradient(135deg, #0891b2, #06b6d4); }
+.step-icon.green { background: linear-gradient(135deg, #059669, #10b981); }
+.step-icon.orange { background: linear-gradient(135deg, #d97706, #f59e0b); }
+.step-icon.red { background: linear-gradient(135deg, #dc2626, #f87171); }
+
+.step-content {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 26px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.step-content:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+}
+
+.step-content h3 {
+  font-size: 1.05em;
+  font-weight: 700;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.step-content p {
+  color: var(--text-dim);
+  font-size: 0.88em;
+  line-height: 1.7;
+}
+
+.step-content .tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-right: 6px;
+}
+
+.tag-purple { background: rgba(99,102,241,0.2); color: var(--accent2); }
+.tag-blue { background: rgba(34,211,238,0.15); color: var(--cyan); }
+.tag-green { background: rgba(52,211,153,0.15); color: var(--green); }
+.tag-orange { background: rgba(245,158,11,0.15); color: var(--orange); }
+.tag-red { background: rgba(248,113,113,0.15); color: var(--red); }
+
+.connector {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0;
+  color: var(--text-dim);
+  opacity: 0.4;
+  font-size: 20px;
+}
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-bottom: 40px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 40px; }
+
+.species-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform 0.2s;
+}
+
+.species-card:hover { transform: translateY(-3px); }
+
+.species-card .card-header {
+  padding: 20px 22px 16px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(192,132,252,0.08));
+  border-bottom: 1px solid var(--border);
+}
+
+.species-card .card-header .sci-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8em;
+  color: var(--accent2);
+  font-style: italic;
+  margin-bottom: 4px;
+}
+
+.species-card .card-header h3 { font-size: 1.1em; font-weight: 700; }
+.species-card .card-body { padding: 18px 22px; }
+
+.species-card .card-body .stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(42,53,80,0.5);
+  font-size: 0.85em;
+}
+
+.species-card .card-body .stat-row:last-child { border-bottom: none; }
+.species-card .card-body .stat-label { color: var(--text-dim); font-size: 0.82em; }
+.species-card .card-body .stat-value { font-weight: 600; font-size: 0.88em; }
+
+.stars { color: var(--green); letter-spacing: 2px; font-size: 13px; }
+
+.data-table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 40px;
+}
+
+.data-table-wrap .table-header {
+  padding: 18px 24px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(14,165,233,0.08));
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+  font-size: 1em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  text-align: left;
+  padding: 12px 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table td {
+  padding: 11px 20px;
+  font-size: 0.85em;
+  border-bottom: 1px solid rgba(42,53,80,0.4);
+}
+
+.data-table tr:last-child td { border-bottom: none; }
+.data-table .field-name { font-family: 'JetBrains Mono', monospace; font-size: 0.82em; color: var(--cyan); font-weight: 500; }
+.data-table .field-desc { color: var(--text-dim); font-size: 0.83em; }
+.data-table .field-type { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: rgba(99,102,241,0.15); color: var(--accent2); }
+.data-table .critical { color: var(--orange); font-weight: 600; font-size: 10px; letter-spacing: 0.5px; }
+
+.comparison-table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 40px;
+}
+
+.comparison-table-wrap .ct-header {
+  padding: 18px 24px;
+  background: linear-gradient(135deg, rgba(52,211,153,0.1), rgba(99,102,241,0.08));
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+  font-size: 1em;
+}
+
+.comp-table { width: 100%; border-collapse: collapse; }
+.comp-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-dim);
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+
+.comp-table td {
+  padding: 12px 16px;
+  font-size: 0.84em;
+  border-bottom: 1px solid rgba(42,53,80,0.4);
+}
+
+.comp-table tr:last-child td { border-bottom: none; }
+.comp-table .species-name { font-weight: 600; color: var(--text); }
+.comp-table .species-name .emoji { margin-right: 4px; }
+.comp-table .winner { background: rgba(52,211,153,0.06); }
+.comp-table .winner td:first-child::before {
+  content: '🏆';
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.method-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  transition: transform 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.method-card:hover { transform: translateY(-2px); }
+.method-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 3px;
+}
+
+.method-card.mc-maxent::before { background: var(--accent1); }
+.method-card.mc-glm::before { background: var(--cyan); }
+.method-card.mc-rf::before { background: var(--green); }
+.method-card.mc-occ::before { background: var(--orange); }
+
+.method-card h4 { font-size: 0.95em; font-weight: 700; margin-bottom: 6px; }
+.method-card .mc-data { font-size: 0.78em; color: var(--text-dim); margin-bottom: 8px; }
+.method-card .mc-logic { font-size: 0.82em; color: var(--text); line-height: 1.6; }
+.method-card .mc-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-top: 10px;
+}
+
+.mc-badge.badge-maxent { background: rgba(99,102,241,0.2); color: var(--accent2); }
+.mc-badge.badge-glm { background: rgba(34,211,238,0.15); color: var(--cyan); }
+.mc-badge.badge-rf { background: rgba(52,211,153,0.15); color: var(--green); }
+.mc-badge.badge-occ { background: rgba(245,158,11,0.2); color: var(--orange); }
+
+.recommendation {
+  background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(52,211,153,0.08));
+  border: 1px solid var(--accent1);
+  border-radius: 16px;
+  padding: 30px 35px;
+  position: relative;
+  overflow: hidden;
+}
+
+.recommendation::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent1), var(--green), var(--cyan));
+}
+
+.recommendation h2 {
+  font-size: 1.3em;
+  font-weight: 800;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rec-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+.rec-item {
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(42,53,80,0.6);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+.rec-item h4 { font-size: 0.85em; font-weight: 700; margin-bottom: 6px; color: var(--accent3); }
+.rec-item p { font-size: 0.82em; color: var(--text-dim); line-height: 1.6; }
+
+.data-flow-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+.df-node {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 20px;
+  text-align: center;
+  min-width: 140px;
+  transition: transform 0.2s;
+}
+
+.df-node:hover { transform: scale(1.04); }
+.df-node .df-icon { font-size: 24px; margin-bottom: 4px; }
+.df-node .df-label { font-size: 0.78em; font-weight: 600; color: var(--text); }
+.df-node .df-sub { font-size: 0.68em; color: var(--text-dim); }
+.df-arrow { font-size: 22px; color: var(--text-dim); padding: 0 8px; opacity: 0.4; }
+
+.occupancy-diagram {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 30px;
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+.occupancy-diagram h3 { font-size: 1em; font-weight: 700; margin-bottom: 20px; color: var(--accent3); }
+.occ-formula-block {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 28px;
+  margin-bottom: 16px;
+}
+
+.occ-formula-block .of-part { font-family: 'JetBrains Mono', monospace; font-size: 0.9em; font-weight: 500; }
+.occ-formula-block .of-label { font-size: 0.7em; color: var(--text-dim); margin-top: 4px; text-align: center; }
+.occ-explanation { font-size: 0.85em; color: var(--text-dim); max-width: 700px; margin: 0 auto; line-height: 1.7; }
+
+.highlight-box {
+  background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.02));
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 12px;
+  padding: 18px 24px;
+  margin-bottom: 40px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.highlight-box .hb-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+.highlight-box p { font-size: 0.88em; color: var(--text); line-height: 1.6; }
+.highlight-box p strong { color: var(--orange); }
+
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  margin: 40px 0;
+}
+
+@media (max-width: 900px) {
+  .grid-2, .grid-3, .grid-4, .rec-grid { grid-template-columns: 1fr; }
+  .header h1 { font-size: 1.8em; }
+  .container { padding: 20px 16px 60px; }
+}
+
+@media (max-width: 600px) {
+  .pipeline::before { display: none; }
+  .pipeline-step { flex-direction: column; gap: 12px; }
+  .step-icon { width: 40px; height: 40px; font-size: 18px; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="header">
+    <div class="badge">SDM Pipeline</div>
+    <h1>Modélisation de la distribution des espèces</h1>
+    <p class="subtitle">Flux de traitement complet — <span>Engoulevent bois-pourri</span> (Caprimulgus vociferus)</p>
+  </div>
+
+  <div class="concept-card">
+    <h2>🧠 Concept de base</h2>
+    <p>
+    Un <strong>SDM</strong> (Species Distribution Model) est un modèle statistique ou algorithmique qui prédit la
+      <strong>probabilité de présence</strong> d'une espèce dans l'espace, en fonction de variables environnementales.
+    On part du principe que la distribution d'une espèce n'est pas aléatoire — elle est structurée par sa niche écologique.
+    </p>
+    <div class="formula">
+    Observations géoréférencées + Variables environnementales &nbsp;→&nbsp; <span class="highlight-green">Modèle</span> &nbsp;→&nbsp; <span class="highlight-orange">Carte prédictive</span>
+    </div>
+  </div>
+
+  <div class="section-title">
+    <span class="num">0</span>
+    Vue d'ensemble du flux de données
+  </div>
+
+  <div class="data-flow-visual">
+    <div class="df-node" style="border-color: rgba(99,102,241,0.4);">
+      <div class="df-icon">📡</div>
+      <div class="df-label">eBird</div>
+      <div class="df-sub">Checklists</div>
+    </div>
+    <div class="df-arrow">→</div>
+    <div class="df-node" style="border-color: rgba(34,211,238,0.4);">
+      <div class="df-icon">📋</div>
+      <div class="df-label">Sampling</div>
+      <div class="df-sub">Effort & détectabilité</div>
+    </div>
+    <div class="df-arrow">→</div>
+    <div class="df-node" style="border-color: rgba(52,211,153,0.4);">
+      <div class="df-icon">🌍</div>
+      <div class="df-label">Raster</div>
+      <div class="df-sub">Variables env.</div>
+    </div>
+    <div class="df-arrow">→</div>
+    <div class="df-node" style="border-color: rgba(245,158,11,0.4);">
+      <div class="df-icon">🧮</div>
+      <div class="df-label">Occupancy</div>
+      <div class="df-sub">Modèle R</div>
+    </div>
+    <div class="df-arrow">→</div>
+    <div class="df-node" style="border-color: rgba(192,132,252,0.4);">
+      <div class="df-icon">🗺️</div>
+      <div class="df-label">Carte</div>
+      <div class="df-sub">Probabilité de présence</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-title">
+    <span class="num">1</span>
+    Pipeline analytique détaillé
+  </div>
+
+  <div class="pipeline">
+    <div class="pipeline-step">
+      <div class="step-icon purple">📡</div>
+      <div class="step-content">
+        <h3><span class="tag tag-purple">Source</span> Collecte des données eBird</h3>
+        <p>
+        Récupération des <strong>checklists</strong> et du fichier <strong>sampling</strong> via l'API eBird ou le téléchargement direct.
+        Filtrer les observations de l'<strong>Engoulevent bois-pourri</strong> (<em>Caprimulgus vociferus</em>)
+        en utilisant <code>ALL SPECIES REPORTED = 1</code> pour garantir la validité des absences.
+        </p>
+      </div>
+    </div>
+    <div class="connector">↓</div>
+    <div class="pipeline-step">
+      <div class="step-icon blue">🔗</div>
+      <div class="step-content">
+        <h3><span class="tag tag-blue">Jointure</span> Relier checklists ↔ sampling</h3>
+        <p>
+        La clé <strong>SAMPLING EVENT IDENTIFIER</strong> relie les deux fichiers.
+        Cette jointure est essentielle : elle permet d'accéder aux variables d'effort
+          (<em>DURATION MINUTES</em>, <em>EFFORT DISTANCE KM</em>, <em>NUMBER OBSERVERS</em>)
+        nécessaires à la modélisation de la détectabilité.
+        </p>
+      </div>
+    </div>
+    <div class="connector">↓</div>
+    <div class="pipeline-step">
+      <div class="step-icon cyan">🌍</div>
+      <div class="step-content">
+        <h3><span class="tag tag-blue">Extraction</span> Extraction des covariables environnementales</h3>
+        <p>
+        À partir des coordonnées <strong>LATITUDE / LONGITUDE</strong> (WGS84), extraire les valeurs des raster
+        environnementaux : altitude, température, précipitations, couvert forestier, NDVI, etc.
+        Ces variables forment le profil de niche de l'espèce.
+        </p>
+      </div>
+    </div>
+    <div class="connector">↓</div>
+    <div class="pipeline-step">
+      <div class="step-icon green">🧮</div>
+      <div class="step-content">
+        <h3><span class="tag tag-green">Modélisation</span> Modèle d'occupancy (Huggin–Burnham)</h3>
+        <p>
+        Le modèle sépare explicitement deux processus :<br>
+          <strong>P(observation)</strong> = <strong>P(présence)</strong> × <strong>P(détection | présence)</strong><br>
+        La composante détectabilité est modélisée à partir des variables d'effort du fichier sampling,
+        corrigeant ainsi le biais de non-détection inhérent aux données citoyennes.
+        </p>
+      </div>
+    </div>
+    <div class="connector">↓</div>
+    <div class="pipeline-step">
+      <div class="step-icon orange">🗺️</div>
+      <div class="step-content">
+        <h3><span class="tag tag-orange">Prédiction</span> Carte de probabilité de présence</h3>
+        <p>
+        Application du modèle calibré à l'ensemble du territoire (raster environnemental complet).
+        Le résultat est une <strong>carte continue de probabilité de présence</strong>,
+        avec des intervalles de confiance issus d'un bootstrap ou d'une validation croisée spatiale.
+        </p>
+      </div>
+    </div>
+    <div class="connector">↓</div>
+    <div class="pipeline-step">
+      <div class="step-icon red">✅</div>
+      <div class="step-content">
+        <h3><span class="tag tag-red">Validation</span> Évaluation et validation du modèle</h3>
+        <p>
+        Validation spatiale croisée (leave-one-region-out), calcul de l'AUC-ROC,
+        et vérification de la cohérence écologique.
+        Comparaison avec d'autres approches (MaxEnt, Random Forest) pour robustesse.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-title">
+    <span class="num">2</span>
+    Structure des données eBird
+  </div>
+
+  <div class="data-table-wrap">
+    <div class="table-header">📊 Champs clés de la base eBird — 49 champs, 5 catégories</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Champ</th>
+          <th>Description</th>
+          <th>Type</th>
+          <th>Rôle</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="field-name">SAMPLING EVENT IDENTIFIER</td>
+          <td class="field-desc">Identifiant unique de l'échantillon</td>
+          <td><span class="field-type">String</span></td>
+          <td><span class="critical">★ CLÉ de jointure</span></td>
+        </tr>
+        <tr>
+          <td class="field-name">LATITUDE / LONGITUDE</td>
+          <td class="field-desc">Coordonnées géographiques</td>
+          <td><span class="field-type">Decimal</span></td>
+          <td><span class="critical">★ Géoréférencement</span></td>
+        </tr>
+        <tr>
+          <td class="field-name">ALL SPECIES REPORTED</td>
+          <td class="field-desc">Liste complète des espèces vues ou entendues</td>
+          <td><span class="field-type">Integer</span></td>
+          <td><span class="critical">★ Filtre absences valides</span></td>
+        </tr>
+        <tr>
+          <td class="field-name">DURATION MINUTES</td>
+          <td class="field-desc">Durée de la checklist</td>
+          <td><span class="field-type">Numeric</span></td>
+          <td><span class="critical">★ Détectabilité</span></td>
+        </tr>
+        <tr>
+          <td class="field-name">EFFORT DISTANCE KM</td>
+          <td class="field-desc">Distance parcourue</td>
+          <td><span class="field-type">Numeric</span></td>
+          <td><span class="critical">★ Détectabilité</span></td>
+        </tr>
+        <tr>
+          <td class="field-name">NUMBER OBSERVERS</td>
+          <td class="field-desc">Nombre d'observateurs</td>
+          <td><span class="field-type">Integer</span></td>
+          <td><span class="critical">★ Détectabilité</span></td>
+        </tr>
+        <tr>
+          <td class="field-name">BREEDING CODE</td>
+          <td class="field-desc">Code de reproduction</td>
+          <td><span class="field-type">String</span></td>
+          <td><span class="critical">★ Période niche</span></td>
+        </tr>
+        <tr>
+          <td class="field-name">DATE</td>
+          <td class="field-desc">Date de l'observation</td>
+          <td><span class="field-type">Date</span></td>
+          <td><span class="critical">★ Saisonnalité</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-title">
+    <span class="num">3</span>
+    Logique du modèle d'occupancy
+  </div>
+
+  <div class="occupancy-diagram">
+    <h3>🔬 Séparation des deux processus</h3>
+    <div class="occ-formula-block">
+      <div>
+        <div class="of-part">P(observation) = P(présence) × P(détection | présence)</div>
+        <div class="of-label">Le fichier sampling alimente la composante détectabilité</div>
+      </div>
+    </div>
+    <div class="occ-explanation">
+      <strong>Ne pas observer ≠ Absent</strong> — Un oiseau peut être présent mais non détecté
+      (observateur novice, conditions météo, courte durée d'observation).
+    Le modèle d'occupancy corrige ce biais en modélisant simultanément la <span style="color:var(--green)">présence réelle</span>
+    et la <span style="color:var(--orange)">détectabilité</span>, contrairement aux méthodes classiques
+    qui confondent absence réelle et non-détection.
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-title">
+    <span class="num">4</span>
+    Grandes familles de méthodes SDM
+  </div>
+
+  <div class="grid-4">
+    <div class="method-card mc-maxent">
+      <h4>MaxEnt</h4>
+      <div class="mc-data">Données : Présence seulement</div>
+      <div class="mc-logic">Compare les sites de présence au « background » environnemental. Maximum d'entropie.</div>
+      <div class="mc-badge badge-maxent">Présence-only</div>
+    </div>
+    <div class="method-card mc-glm">
+      <h4>GLM / GAM</h4>
+      <div class="mc-data">Données : Présence + absence</div>
+      <div class="mc-logic">Régression classique avec termes spatiaux. Linéaire (GLM) ou semi-paramétrique (GAM).</div>
+      <div class="mc-badge badge-glm">Présence-absence</div>
+    </div>
+    <div class="method-card mc-rf">
+      <h4>Random Forest / BRT</h4>
+      <div class="mc-data">Données : Présence + absence</div>
+      <div class="mc-logic">Apprentissage machine. Capture les interactions non-linéaires entre covariables.</div>
+      <div class="mc-badge badge-rf">Machine learning</div>
+    </div>
+    <div class="method-card mc-occ">
+      <h4>Occupancy Models</h4>
+      <div class="mc-data">Données : Présences + effort</div>
+      <div class="mc-logic">Sépare explicitement détectabilité et présence réelle. Idéal pour eBird.</div>
+      <div class="mc-badge badge-occ">★ Recommandé</div>
+    </div>
+  </div>
+
+  <div class="highlight-box">
+    <div class="hb-icon">💡</div>
+    <p>
+      <strong>Pourquoi l'occupancy model est particulièrement adapté à eBird :</strong>
+    Le fichier <em>sampling</em> fournit les variables d'effort nécessaires pour modéliser la détectabilité.
+    C'est un avantage méthodologique majeur par rapport à d'autres sources de données où cette information est absente.
+    </p>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-title">
+    <span class="num">5</span>
+    Espèce candidate — Engoulevent bois-pourri
+  </div>
+
+  <div class="grid-2">
+    <div class="species-card">
+      <div class="card-header">
+        <div class="sci-name">Caprimulgus vociferus</div>
+        <h3>🦉 Engoulevent bois-pourri</h3>
+      </div>
+      <div class="card-body">
+        <div class="stat-row">
+          <span class="stat-label">Statut QC / Canada</span>
+          <span class="stat-value" style="color:var(--orange);">Menacé</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Spécificité d'habitat</span>
+          <span class="stars">⭐⭐⭐⭐⭐</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Identification distinctive</span>
+          <span class="stars">⭐⭐⭐⭐⭐</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Observations eBird</span>
+          <span class="stars">⭐⭐⭐⭐</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Covariables prédictibles</span>
+          <span class="stars">⭐⭐⭐⭐</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Score global</span>
+          <span class="stat-value" style="color:var(--green);">4.6 / 5</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="species-card">
+      <div class="card-header">
+        <div class="sci-name">Caprimulgus carolinensis</div>
+        <h3>🦉 Engoulevent d'Amérique</h3>
+      </div>
+      <div class="card-body">
+        <div class="stat-row">
+          <span class="stat-label">Statut QC / Canada</span>
+          <span class="stat-value" style="color:var(--orange);">Vulnérable</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Spécificité d'habitat</span>
+          <span class="stars">⭐⭐⭐</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Identification distinctive</span>
+          <span class="stars">⭐⭐⭐⭐⭐</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Observations eBird</span>
+          <span class="stars">⭐⭐⭐⭐⭐</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Covariables prédictibles</span>
+          <span class="stars">⭐⭐⭐</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Score global</span>
+          <span class="stat-value" style="color:var(--orange);">3.4 / 5</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight-box">
+    <div class="hb-icon">🎯</div>
+    <p>
+      <strong>Engoulevent bois-pourri — atout majeur :</strong> Identification sans ambiguïté par le chant.
+    Espèce crépusculaire/nocturne — les observations eBird sont concentrées sur des créneaux horaires étroits,
+    ce qui introduit un biais d'effort particulier, mais <strong>modélisable</strong> via les variables du fichier sampling.
+    Habitat moins spatialement contraint que la Grive de Bicknell, mais identification très fiable.
+    </p>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-title">
+    <span class="num">6</span>
+    Comparaison des espèces candidates
+  </div>
+
+  <div class="comparison-table-wrap">
+    <div class="ct-header">📊 Tableau comparatif — Toutes les espèces évaluées</div>
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Espèce</th>
+          <th>Statut</th>
+          <th>Spécificité</th>
+          <th>Identification</th>
+          <th>eBird</th>
+          <th>Prédictible</th>
+          <th>Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="winner">
+          <td class="species-name"><span class="emoji">🏆</span> Grive de Bicknell</td>
+          <td>Menacé</td>
+          <td class="stars">⭐⭐⭐⭐⭐</td>
+          <td class="stars">⭐⭐⭐⭐⭐</td>
+          <td class="stars">⭐⭐⭐⭐</td>
+          <td class="stars">⭐⭐⭐⭐⭐</td>
+          <td><strong style="color:var(--green);">4.8</strong></td>
+        </tr>
+        <tr>
+          <td class="species-name"><span class="emoji">🥈</span> Paruline du Canada</td>
+          <td>Vulnérable</td>
+          <td class="stars">⭐⭐⭐⭐</td>
+          <td class="stars">⭐⭐⭐⭐⭐</td>
+          <td class="stars">⭐⭐⭐⭐⭐</td>
+          <td class="stars">⭐⭐⭐⭐</td>
+          <td><strong style="color:var(--green);">4.4</strong></td>
+        </tr>
+        <tr>
+          <td class="species-name"><span class="emoji">🥉</span> Engoulevent bois-pourri</td>
+          <td>Menacé</td>
+          <td class="stars">⭐⭐⭐⭐</td>
+          <td class="stars">⭐⭐⭐⭐⭐</td>
+          <td class="stars">⭐⭐⭐⭐</td>
+          <td class="stars">⭐⭐⭐⭐</td>
+          <td><strong style="color:var(--orange);">4.0</strong></td>
+        </tr>
+        <tr>
+          <td class="species-name"><span class="emoji">🔵</span> Paruline azurée</td>
+          <td>Menacé</td>
+          <td class="stars">⭐⭐⭐⭐⭐</td>
+          <td class="stars">⭐⭐⭐⭐</td>
+          <td class="stars">⭐⭐⭐⭐</td>
+          <td class="stars">⭐⭐⭐⭐⭐</td>
+          <td><strong style="color:var(--orange);">4.2</strong></td>
+        </tr>
+        <tr>
+          <td class="species-name"><span class="emoji">🟡</span> Pluvier siffleur</td>
+          <td>Menacé</td>
+          <td class="stars">⭐⭐⭐⭐⭐</td>
+          <td class="stars">⭐⭐⭐⭐</td>
+          <td class="stars">⭐⭐⭐</td>
+          <td class="stars">⭐⭐⭐⭐</td>
+          <td><strong style="color:var(--text-dim);">3.6</strong></td>
+        </tr>
+        <tr>
+          <td class="species-name"><span class="emoji">🟠</span> Moucherolle à côtés olive</td>
+          <td>Préoccupant</td>
+          <td class="stars">⭐⭐</td>
+          <td class="stars">⭐⭐⭐</td>
+          <td class="stars">⭐⭐⭐⭐⭐</td>
+          <td class="stars">⭐⭐</td>
+          <td><strong style="color:var(--text-dim);">2.4</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-title">
+    <span class="num">7</span>
+    En résumé
+  </div>
+
+  <div class="recommendation">
+    <h2>🎯 Projet finalisé — SDM avec eBird + Occupancy Modeling</h2>
+    <div class="rec-grid">
+      <div class="rec-item">
+        <h4>🌿 Question écologique</h4>
+        <p>Quels habitats déterminent la distribution de l'Engoulevent bois-pourri ?</p>
+      </div>
+      <div class="rec-item">
+        <h4>🔬 Question méthodologique</h4>
+        <p>Comment corriger le biais d'effort des données citoyennes eBird pour obtenir des prédictions fiables ?</p>
+      </div>
+      <div class="rec-item">
+        <h4>🗺️ Produit final</h4>
+        <p>Carte prédictive de probabilité de présence, avec validation spatiale rigoureuse.</p>
+      </div>
+    </div>
+    <div style="margin-top:20px; text-align:center;">
+      <p style="font-size:0.9em; color:var(--text-dim);">
+      Un projet à la <strong style="color:var(--accent3);">cohérence de bout en bout</strong> —
+      de la collecte des données à la carte prédictive, en passant par la correction du biais de détectabilité.
+      </p>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

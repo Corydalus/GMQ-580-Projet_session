@@ -1,0 +1,62 @@
+# ════════════════════════════════════════════════════════════════════════════
+#  DONNÉES — volumineuses (~150 Go LiDAR + 20 Go eBird) et/ou confidentielles
+#  RÈGLE : aucune donnée brute ne doit JAMAIS être versionnée sur GitHub.
+#  Par sécurité, tout le contenu de data/ est ignoré par défaut.
+# ════════════════════════════════════════════════════════════════════════════
+data/*
+
+# ── Exceptions légères et essentielles ──────────────────────────────────────
+# (emprise de la zone d'étude, ~100 Ko — pas de commentaire en ligne en gitignore !)
+!data/zone_etude.gpkg
+
+# ── data/processed/ : on garde uniquement les petits résultats parquet/json ──
+!data/processed/
+data/processed/*
+!data/processed/*.parquet
+!data/processed/*.json
+
+# ── Rappel explicite (déjà couvert par data/* ci-dessus) ────────────────────
+# eBird sous accord de confidentialité : data/ebird/, data/processed/ebird/
+# LiDAR Données Québec : data/mhc/, data/mnt/, data/pente/
+# CHELSA : data/climat/
+
+# ════════════════════════════════════════════════════════════════════════════
+#  OUTPUTS lourds
+# ════════════════════════════════════════════════════════════════════════════
+outputs/maps/
+outputs/models/
+# Garder les figures légères et les tableaux CSV/parquet de résultats
+!outputs/figures/
+!outputs/tables/
+
+# ── Modèles sérialisés ──────────────────────────────────────────────────────
+*.joblib
+*.pkl
+
+# ════════════════════════════════════════════════════════════════════════════
+#  Python
+# ════════════════════════════════════════════════════════════════════════════
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+.venv/
+.env
+*.egg-info/
+dist/
+build/
+
+# ── Jupyter ─────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+
+# ── uv : uv.lock EST versionné (reproductibilité), .venv non ────────────────
+.venv/
+
+# ── OS ──────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── IDE ─────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
