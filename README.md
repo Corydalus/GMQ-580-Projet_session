@@ -155,19 +155,20 @@ uv run python code/05_figures.py      # → outputs/figures/*.png
 ## Structure du dépôt
 ```
 GMQ-580-Projet_session/
-├── README.md · CLAUDE.md · methodologie_pour_README.md
+├── README.md
 ├── pyproject.toml · uv.lock · .gitignore
 ├── code/                 # 01 → 05 + utils.py
 ├── notebooks/            # exploration
 ├── scripts_independants/ # téléchargement des données
-├── Recherche documentaire/   # synthèses, protocole, cadrage
 ├── data/                 # NON versionné (sauf zone_etude.gpkg et résultats parquet/json)
 │   ├── raw/ · interim/ · processed/
 │   ├── mhc/ · mnt/ · pente/ · climat/ · ebird/   # données brutes locales
 │   └── zone_etude.gpkg
-├── outputs/              # figures/ · tables/ (versionnés) · maps/ · models/ (ignorés)
-└── rapport/
+└── outputs/              # figures/ · tables/ (versionnés) · maps/ · models/ (ignorés)
 ```
+> Les documents de travail (`CLAUDE.md`, `methodologie_pour_README.md`,
+> `rapport/`, `Recherche documentaire/`) sont conservés **en local** mais exclus
+> du dépôt via `.gitignore`.
 
 ## Références
 - Johnston, A. et al. (2021). Analytical guidelines to increase the value of community science data: an example using eBird data to estimate species distributions. *Diversity and Distributions*, 27, 1265–1277. https://doi.org/10.1111/ddi.13271
