@@ -28,6 +28,8 @@ climat_stac:
   annees: null                   # null = déduites de l'EBD filtré (min/max)
   couverture_nuageuse_max: 60    # filtre eo:cloud_cover (%)
   reducteur: "median"            # median | mean
+  resolution_native_m: 30        # résolution native Landsat (m)
+  tuile_px: 1024                 # taille de tuile (px) pour checkpoint/reprise
 
 modele:
   random_state: 42

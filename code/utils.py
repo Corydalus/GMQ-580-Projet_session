@@ -30,6 +30,14 @@ def set_gdal_cache(mb: int = 512) -> None:
     os.environ["GDAL_CACHEMAX"] = str(mb)
 
 
+def configurer_gdal_cloud() -> None:
+    """Réglages GDAL pour la lecture de COG signés sur le cloud (STAC / Planetary Computer)."""
+    os.environ.setdefault("GDAL_DISABLE_READDIR_ON_OPEN", "EMPTY_DIR")
+    os.environ.setdefault("GDAL_HTTP_MAX_RETRY", "5")
+    os.environ.setdefault("GDAL_HTTP_RETRY_DELAY", "1")
+    os.environ.setdefault("VSI_CACHE", "TRUE")
+
+
 # ── Journalisation & rapports (voir CLAUDE.md §7) ───────────────────────────
 
 def setup_logging(script: str, verbose: bool = False,

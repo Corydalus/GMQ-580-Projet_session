@@ -72,6 +72,8 @@ class ClimatStacCfg(_Base):
     annees: list[int] | None = None
     couverture_nuageuse_max: float = Field(60, ge=0, le=100)
     reducteur: str = "median"
+    resolution_native_m: float = Field(30, gt=0)  # résolution native Landsat
+    tuile_px: int = Field(1024, gt=0)  # taille de tuile (px) pour checkpoint/reprise
 
     @field_validator("mois")
     @classmethod
