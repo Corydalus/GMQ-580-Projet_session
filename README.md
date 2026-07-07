@@ -24,9 +24,9 @@ La zone d'étude est définie par le fichier [`data/zone_etude.gpkg`](data/zone_
 | eBird EBD — observations + sampling (Cornell Lab of Ornithology) | TSV compressé | EPSG:4326 | [ebird.org/data/download](https://ebird.org/data/download) — sous [accord de confidentialité](https://www.birds.cornell.edu/home/ebird-data-access-terms-of-use/) |
 | Carte écoforestière avec perturbations (MFFP) | GDB / SHP | EPSG:32198 | [Données Québec](https://www.donneesquebec.ca/recherche/dataset/carte-ecoforestiere-avec-perturbations) |
 | Produits dérivés du LiDAR — MHC, MNT, Pentes (MRNF) | GeoTIFF 1 m | EPSG:32198 | [Données Québec](https://www.donneesquebec.ca/recherche/dataset/produits-derives-de-base-du-lidar) |
-| CHELSA Bio10 — température estivale moyenne (v2.1) | GeoTIFF 1 km | EPSG:4326 | [chelsa-climate.org](https://chelsa-climate.org/downloads/) |
+| Landsat Collection 2 niveau-2 — température de surface estivale (bande `ST_B10`, composite STAC) | STAC → GeoTIFF 30 m | UTM 18/19N natif → EPSG:32198 | [Microsoft Planetary Computer](https://planetarycomputer.microsoft.com/dataset/landsat-c2-l2) (API STAC) |
 | Réseau routier (Adresses Québec / RRN) | SHP | EPSG:32198 | [Données Québec](https://www.donneesquebec.ca/recherche/dataset/adresses-quebec) |
-| Réseau hydrographique national — milieux humides (RNCan) | GDB | EPSG:4269 | [open.canada.ca](https://open.canada.ca/data/fr/dataset/a4b190fe-e090-4e6d-881e-b87956c07977) |
+| Milieux humides potentiels du Québec (v2023) — MELCCFP / Direction de la connaissance écologique | GPKG / FGDB | EPSG:32198 | [Données Québec](https://www.donneesquebec.ca/recherche/fr/dataset/milieux-humides-potentiels) — licence CC-BY 4.0 |
 
 > **⚠️ Données non versionnées.** Les données brutes (~150 Go LiDAR, ~20 Go eBird) et confidentielles (eBird EBD) ne sont **jamais** poussées sur GitHub : tout le dossier `data/` est exclu via [`.gitignore`](.gitignore), à l'exception de l'emprise `data/zone_etude.gpkg` (~100 Ko) et des petits résultats `*.parquet` / `*.json`. Le script [`scripts_independants/telechargement_donnees.py`](scripts_independants/telechargement_donnees.py) documente l'acquisition.
 
@@ -42,10 +42,10 @@ Le pipeline produit un **stack raster à 10 bandes** (`data/processed/stack_5m.t
 | 3 | Densité de lisière forêt-ouvert | Écoforestière MFFP | Focal 1 km | H1 — mosaïque |
 | 4 | Proportion forêt feuillue/mélangée | Écoforestière MFFP | Focal 500 m | Composition |
 | 5 | Densité de routes (km/km²) | Adresses Québec / RRN | Focal 1 km | H3 — anthropique |
-| 6 | Température estivale moyenne (Bio10) | CHELSA v2.1 | 1 km → 5 m | Limite thermique |
+| 6 | Température de surface estivale (LST) | Landsat C2 L2 (composite STAC) | 30 m → 5 m | Limite thermique |
 | 7 | Classe d'âge du peuplement | Écoforestière MFFP | 5 m | H4 — structure temporelle |
 | 8 | Densité du peuplement (fermeture couvert) | Écoforestière MFFP | 5 m | H4 — couvert complémentaire |
-| 9 | Distance à un milieu humide | NHN / Canvec | 5 m | Alimentation nocturne |
+| 9 | Distance à un milieu humide | Milieux humides potentiels (MELCCFP, 2023) | 5 m | Alimentation nocturne |
 | 10 | Élévation (MNT) | LiDAR | 5 m | Limite altitudinale (~600 m) |
 
 **Variables de détection (Random Forest uniquement — non cartographiées)** — corrigent le biais d'effort d'observation : `minutes_apres_coucher` (via `astral`, fuseau `America/Toronto`, DST géré), `phase_lune`, `log_duree`, `jour_julien`.
@@ -55,7 +55,7 @@ Pipeline de traitement séquentiel en cinq scripts numérotés (dossier [`code/`
 
 ```mermaid
 flowchart TD
-    A[Données brutes<br/>LiDAR · eBird · MFFP · CHELSA · RRN · NHN] -->|01_predictors.py<br/>rasterio / scipy.ndimage| B[Stack 10 bandes<br/>stack_5m.tif · 5 m · EPSG:32198]
+    A[Données brutes<br/>LiDAR · eBird · MFFP · Landsat STAC · RRN · Milieux humides] -->|01_predictors.py<br/>rasterio / scipy.ndimage| B[Stack 10 bandes<br/>stack_5m.tif · 5 m · EPSG:32198]
     A -->|02_ebird.py<br/>polars / astral / geopandas| C[Table modèle<br/>table_modele.parquet<br/>zero-fill + covariables]
     B --> C
     C -->|03_model.py<br/>scikit-learn| D[Random Forest<br/>rf.joblib + métriques CV spatiale]
@@ -91,6 +91,7 @@ Projet Python géré avec **`uv`** (`pyproject.toml` + `uv.lock` versionné pour
 | Tabulaire | `polars` | `scan_csv` lazy pour l'EBD volumineux ; `to_pandas()` seulement à l'entrée sklearn |
 | Vecteur | `geopandas` | clip, reprojection, jointures spatiales |
 | Raster | `rasterio` + `rioxarray` | `rasterio` pour les opérations fenêtrées ; `rioxarray` pour les stacks légères |
+| STAC / imagerie | `pystac-client` + `planetary-computer` + `odc-stac` | Requête du catalogue Landsat C2 L2, signature des URLs, chargement paresseux des scènes en `xarray` pour le composite de température de surface estivale |
 | Numérique | `numpy` + `scipy.ndimage` | focal stats via `uniform_filter` (séparable = rapide) |
 | Modèle | `scikit-learn` | RF + validation croisée spatiale + importance par permutation + PDP |
 | Soleil / lune | `astral` | minutes après coucher du soleil, fraction lunaire |
@@ -110,8 +111,9 @@ Projet Python géré avec **`uv`** (`pyproject.toml` + `uv.lock` versionné pour
 ## État d'avancement
 | Étape | Statut |
 |-------|--------|
-| Acquisition des données (LiDAR, eBird, écoforestière, CHELSA) | ✅ Complété |
+| Acquisition des données (LiDAR, eBird, écoforestière) | ✅ Complété |
 | Initialisation du dépôt (structure, `.gitignore`, `pyproject.toml`, README) | ✅ Complété |
+| Intégration des nouvelles sources (composite Landsat STAC, milieux humides potentiels 2023) | ⏳ À faire |
 | `01_predictors.py` — stack 10 bandes à 5 m | ⏳ À faire |
 | `02_ebird.py` — table modèle zero-fillée | ⏳ À faire |
 | `03_model.py` — Random Forest + validation spatiale | ⏳ À faire |
@@ -125,12 +127,15 @@ Projet Python géré avec **`uv`** (`pyproject.toml` + `uv.lock` versionné pour
 - **Tuning** : `RandomizedSearchCV` (20 itérations) sur `n_estimators`, `max_features`, `min_samples_leaf`, `max_depth`.
 - **Résolution 5 m, CRS EPSG:32198** uniques pour tous les rasters et vecteurs ; rasters de sortie en COG DEFLATE blocksize 512 ; `random_state=42` partout.
 - **Extraction des covariables eBird** dans un buffer de 30 m autour du point GPS (précision eBird ≈ 5–30 m).
+- **Température — passage de CHELSA à un composite Landsat via STAC.** La variable thermique (Bio10 CHELSA, air, 1 km) est remplacée par un composite de **température de surface estivale (LST)** dérivé de **Landsat Collection 2 niveau-2** (bande `ST_B10`, 30 m natif) interrogé par un **pipeline STAC** (Microsoft Planetary Computer). Le composite est la moyenne des scènes claires (masque nuages/ombres via `QA_PIXEL`) de **juin–juillet sur toutes les années de la période d'échantillonnage eBird**, reprojeté et rééchantillonné à 5 m. Motif : résolution ~30× plus fine, capable de capter les microclimats de surface (clairières, lisières, coupes) pertinents pour l'habitat de l'espèce. *Caveat assumé* : la LST (température de peau du sol) diffère de la température de l'air ; elle est interprétée comme **proxy thermique de surface**, non comme macroclimat.
+- **Milieux humides — couche « Milieux humides potentiels du Québec » (MELCCFP, v2023)** en remplacement du Réseau hydrographique national (NHN/Canvec). Couverture provinciale homogène issue de la photo-interprétation 3D haute résolution (CIC / MELCCFP), mieux adaptée à l'échelle MRC pour la variable *Distance à un milieu humide*. Licence CC-BY 4.0 (attribution requise dans le rapport).
 - **Variables exclues** (justifiées dans le rapport) : domaine bioclimatique (variance nulle à l'échelle MRC), pente (implicite dans le TWI), NDVI/NDWI (prétraitement Sentinel-2 hors budget), type de sol et autres redondances (corrélation / VIF élevé).
 
 ## Difficultés rencontrées
 - **~150 Go de LiDAR brut à 1 m** : impossible à charger en mémoire. Solution adoptée — tout le pipeline fonctionne par fenêtres `rasterio.windows` et tuiles, avec `os.environ["GDAL_CACHEMAX"] = "512"` dans chaque worker. Repli 10 m possible (constante `RESOLUTION_M` dans `utils.py`) si la RAM est insuffisante.
 - **eBird EBD volumineux (~20 Go)** : lecture lazy via `polars.scan_csv()`, conversion `to_pandas()` uniquement à l'entrée de sklearn.
 - **Confidentialité eBird** : exclusion stricte des données brutes du dépôt Git (voir `.gitignore`).
+- **Couverture nuageuse du composite Landsat** : les scènes estivales dégagées sont rares certaines années ; le composite agrège **toutes les années eBird** (juin–juillet) avec masque `QA_PIXEL` pour maximiser le nombre d'observations claires par pixel. Repli documenté si des trous subsistent : élargissement de la fenêtre (juin–août) ou comblement par interpolation locale. Aucun téléchargement en masse — les scènes sont lues à la volée via l'API STAC (Planetary Computer).
 
 ---
 
