@@ -25,6 +25,7 @@ data/processed/*
 # ════════════════════════════════════════════════════════════════════════════
 outputs/maps/
 outputs/models/
+outputs/logs/
 # Garder les figures légères et les tableaux CSV/parquet de résultats
 !outputs/figures/
 !outputs/tables/
