@@ -41,6 +41,9 @@ outputs/models/
 # ════════════════════════════════════════════════════════════════════════════
 *.md
 !/README.md
+# CLAUDE.md (roadmap + instructions Claude Code) : local uniquement, jamais versionné.
+# Déjà couvert par *.md ci-dessus ; entrée explicite pour lever toute ambiguïté.
+/CLAUDE.md
 
 # Dossier de recherche complet (inclut aussi .docx, .html, .csv, .qmd)
 /Recherche documentaire/
