@@ -12,9 +12,12 @@ Télécharge en boucle les sources de données AUTOMATISABLES listées dans
 
     1. LiDAR — produits dérivés MFFP (MHC, MNT, Pentes) par feuillet
        SNRC 1:20 000, à partir du CSV feuillets_zone_etude.csv.
-    2. CHELSA v2.1 — Bio10 (T moy. saison chaude) et Bio18 (précip.
-       estivales) — rasters globaux 1 km, à clipper plus tard avec
-       le polygone MRC.
+
+Climat (température estivale) : PLUS de téléchargement en masse ici. La
+température de surface estivale (LST) est désormais calculée À LA VOLÉE
+par un pipeline STAC (Landsat Collection 2 niveau-2, Microsoft Planetary
+Computer) dans code/01_predictors.py — voir README et CLAUDE.md. CHELSA
+n'est plus utilisé.
 
 Sources NON automatisées dans ce script (acquisition manuelle requise
 ou URLs à trouver selon la région) :
@@ -23,10 +26,11 @@ ou URLs à trouver selon la région) :
     - Atlas des oiseaux nicheurs : inscription QuébecOiseaux.
     - Carte écoforestière : voir le bloc TODO en bas du fichier.
     - Réseau routier Adresses Québec : voir TODO.
+    - Milieux humides potentiels du Québec (MELCCFP, v2023) : voir TODO.
 
 USAGE
 -----
-    # Par défaut : MNT + MHC + Pentes + CHELSA, 4 workers parallèles
+    # Par défaut : MNT + MHC + Pentes, 4 workers parallèles
     python telechargement_donnees.py \\
         --csv feuillets_zone_etude.csv \\
         --out data/raw
@@ -38,7 +42,7 @@ USAGE
     # Sous-ensemble LiDAR
     python telechargement_donnees.py \\
         --csv feuillets_zone_etude.csv --out data/raw \\
-        --products MHC,Pentes --skip-chelsa
+        --products MHC,Pentes
 
 DÉPENDANCES
 -----------
@@ -50,12 +54,12 @@ CONVENTIONS D'ARBORESCENCE
     Le code du feuillet reste dans le nom du fichier (pas de collision).
 
     data/raw/
-    ├── MNT/      MNT_31I02SE.tif, MNT_31I01SO.tif, ...
-    ├── MHC/      MHC_31I02SE.tif, MHC_31I01SO.tif, ...
-    ├── Pentes/   Pentes_31I02SE.tif, ...
-    └── chelsa/
-        ├── CHELSA_bio10_1981-2010_V.2.1.tif
-        └── CHELSA_bio18_1981-2010_V.2.1.tif
+    ├── MNT/               MNT_31I02SE.tif, MNT_31I01SO.tif, ...
+    ├── MHC/               MHC_31I02SE.tif, MHC_31I01SO.tif, ...
+    ├── Pentes/            Pentes_31I02SE.tif, ...
+    └── milieux_humides/   milieux_humides_potentiels_2023.gpkg (manuel)
+
+    (Climat : aucun fichier brut — LST calculée à la volée via STAC.)
 """
 
 from __future__ import annotations
@@ -86,10 +90,8 @@ LIDAR_PRODUITS_TOUS = ["MNT", "MHC", "MNT_Ombre",
                        "Pentes", "Courbes_GDB", "Courbes_GPKG"]
 LIDAR_PRODUITS_DEFAUT = ["MNT", "MHC", "Pentes"]
 
-# CHELSA v2.1 — base S3 publique (université de Zurich / SWITCH).
-CHELSA_BASE = ("https://os.zhdk.cloud.switch.ch/envicloud/chelsa/"
-               "chelsa_V2/GLOBAL/climatologies/1981-2010/bio")
-CHELSA_VARS = ["bio10", "bio18"]  # T moy saison chaude ; précip estivales
+# Climat : plus de CHELSA. La température de surface estivale (LST) est
+# calculée à la volée via STAC (Landsat C2 L2) dans code/01_predictors.py.
 
 # Réglages réseau
 TIMEOUT_S        = 60
@@ -119,7 +121,7 @@ log = logging.getLogger("telechargement")
 class Tache:
     url: str
     dest: Path
-    source: str          # ex. 'lidar' / 'chelsa' — pour les stats
+    source: str          # ex. 'lidar' / 'milieux_humides' — pour les stats
     feuillet: str = ""   # code SNRC 20K (LiDAR seulement) — pour les stats
 
 
@@ -213,22 +215,17 @@ def taches_lidar(csv_path: Path, out_dir: Path,
     return taches
 
 
-def taches_chelsa(out_dir: Path, variables: list[str]) -> list[Tache]:
-    """Construit les tâches CHELSA Bio10/Bio18 (rasters globaux ~700 MB).
-    Sera à clipper sur la MRC après téléchargement.
-    """
-    taches: list[Tache] = []
-    for var in variables:
-        nom = f"CHELSA_{var}_1981-2010_V.2.1.tif"
-        url = f"{CHELSA_BASE}/{nom}"
-        dest = out_dir / "chelsa" / nom
-        taches.append(Tache(url=url, dest=dest, source="chelsa"))
-    return taches
-
-
 # ============================================================
 # TODO — Sources à compléter quand les URLs seront connues
 # ============================================================
+# Milieux humides potentiels du Québec (MELCCFP, v2023) :
+#   - Page : https://www.donneesquebec.ca/recherche/fr/dataset/
+#            milieux-humides-potentiels
+#   - Distribution provinciale (GPKG / FGDB). Récupérer l'URL de la
+#     ressource GPKG « Milieux humides potentiels 2023 » sur la page
+#     Données Québec (le lien direct peut changer aux mises à jour), la
+#     mettre dans taches_milieux_humides(), puis clip sur la MRC. CC-BY 4.0.
+#
 # Carte écoforestière à jour avec perturbations :
 #   - Page : https://www.donneesquebec.ca/recherche/dataset/
 #            carte-ecoforestiere-avec-perturbations
@@ -274,6 +271,21 @@ def taches_routes(out_dir: Path) -> list[Tache]:
         nom = Path(urlparse(url).path).name
         dest = out_dir / "routes" / nom
         taches.append(Tache(url=url, dest=dest, source="routes"))
+    return taches
+
+
+def taches_milieux_humides(out_dir: Path) -> list[Tache]:
+    """À COMPLÉTER : URL de la ressource GPKG « Milieux humides potentiels
+    2023 » (MELCCFP, Données Québec). Remplace l'ancienne source NHN/Canvec.
+    """
+    urls: list[str] = [
+        # "https://www.donneesquebec.ca/.../milieux_humides_potentiels_2023.gpkg",
+    ]
+    taches = []
+    for url in urls:
+        nom = Path(urlparse(url).path).name
+        dest = out_dir / "milieux_humides" / nom
+        taches.append(Tache(url=url, dest=dest, source="milieux_humides"))
     return taches
 
 
@@ -342,13 +354,14 @@ def main() -> int:
                               + ",".join(LIDAR_PRODUITS_TOUS) + ")"))
     parser.add_argument("--skip-lidar", action="store_true",
                         help="Ne pas télécharger les fichiers LiDAR")
-    parser.add_argument("--skip-chelsa", action="store_true",
-                        help="Ne pas télécharger CHELSA")
     parser.add_argument("--with-ecoforestiere", action="store_true",
                         help=("Inclure la carte écoforestière (suppose que "
                               "les URLs sont remplies dans le code)"))
     parser.add_argument("--with-routes", action="store_true",
                         help="Inclure le réseau routier (URLs à remplir)")
+    parser.add_argument("--with-milieux-humides", action="store_true",
+                        help=("Inclure les milieux humides potentiels 2023 "
+                              "(URL à remplir dans le code)"))
     parser.add_argument("--workers", type=int, default=DEFAUT_WORKERS,
                         help=f"Workers parallèles (défaut: {DEFAUT_WORKERS})")
     parser.add_argument("--force", action="store_true",
@@ -378,12 +391,8 @@ def main() -> int:
                  n_feuillets, len(produits), len(t_lidar))
         taches.extend(t_lidar)
 
-    # --- CHELSA ---
-    if not args.skip_chelsa:
-        t_chelsa = taches_chelsa(args.out, CHELSA_VARS)
-        log.info("CHELSA : %d fichiers (~700 MB chacun, à clipper après)",
-                 len(t_chelsa))
-        taches.extend(t_chelsa)
+    # --- Climat (LST) : aucun téléchargement — calculé à la volée via STAC
+    #     dans code/01_predictors.py (Landsat C2 L2, Planetary Computer).
 
     # --- Écoforestière (optionnel, URLs à compléter) ---
     if args.with_ecoforestiere:
@@ -403,6 +412,16 @@ def main() -> int:
         else:
             log.info("Routes : %d fichiers", len(t_rt))
             taches.extend(t_rt)
+
+    # --- Milieux humides potentiels (optionnel) ---
+    if args.with_milieux_humides:
+        t_mh = taches_milieux_humides(args.out)
+        if not t_mh:
+            log.warning("--with-milieux-humides demandé mais aucune URL "
+                        "définie. Remplir taches_milieux_humides().")
+        else:
+            log.info("Milieux humides potentiels : %d fichiers", len(t_mh))
+            taches.extend(t_mh)
 
     if not taches:
         log.warning("Aucune tâche. Vérifier les flags --skip-*.")
