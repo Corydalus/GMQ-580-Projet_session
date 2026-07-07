@@ -7,11 +7,17 @@ pour que la collecte pytest fonctionne même sans l'environnement complet.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+# Rend `config` et `utils` (dans code/) importables dans les tests.
+_CODE_DIR = PROJECT_ROOT / "code"
+if str(_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(_CODE_DIR))
 
 
 @pytest.fixture

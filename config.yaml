@@ -1,0 +1,53 @@
+# config.yaml — une analyse = un fichier (voir CLAUDE.md §3.6).
+# Défauts : Engoulevent bois-pourri sur la MRC courante. Changer ce fichier
+# (ou passer --config autre.yaml) suffit à reparamétrer toute l'analyse.
+
+espece:
+  nom_latin: "Antrostomus vociferus"
+  nom_commun: "Engoulevent bois-pourri"
+  code_ebird: "eawpwi"            # code espèce eBird — À CONFIRMER
+
+zone_etude:
+  gpkg: "data/zone_etude.gpkg"
+  crs: "EPSG:32198"
+  resolution_m: 5
+
+ebird:
+  mois_saison: [6, 7]            # juin–juillet (pic d'activité vocale)
+  duree_max_min: 300
+  distance_max_km: 5
+  observateurs_max: 10
+  protocoles: ["Stationary", "Traveling"]
+  listes_completes: true
+  buffer_m: 30                   # extraction des covariables autour du point GPS
+
+climat_stac:
+  collection: "landsat-c2-l2"
+  fournisseur: "planetary-computer"
+  mois: [6, 7]
+  annees: null                   # null = déduites de l'EBD filtré (min/max)
+  couverture_nuageuse_max: 60    # filtre eo:cloud_cover (%)
+  reducteur: "median"            # median | mean
+
+modele:
+  random_state: 42
+  bloc_cv_km: 10                 # blocs spatiaux GroupKFold
+  n_folds: 5
+  n_iter_recherche: 20           # itérations RandomizedSearchCV
+
+chemins:
+  raw: "data/raw"
+  interim: "data/interim"
+  processed: "data/processed"
+  outputs: "outputs"
+
+calcul:                          # parallélisation (voir CLAUDE.md §3.7)
+  n_workers: null                # null = auto (tous les cœurs) ; sinon un entier
+  threads_per_worker: 2
+  memory_limit: "auto"           # p. ex. "8GB" par worker si spill nécessaire
+  dashboard: true                # tableau de bord Dask sur http://localhost:8787
+  processes: true                # true = workers en processus (isolation) ; false = threads
+
+variables:                       # interrupteurs des variantes v2 (voir CLAUDE.md §3.5)
+  routes_par_type: false         # densités séparées par ClsRte
+  milieux_humides_par_type: false  # distances par CLASSE/TYPE
