@@ -23,7 +23,7 @@ La zone d'étude est définie par le fichier [`data/zone_etude.gpkg`](data/zone_
 |--------|--------|-----|-------|
 | eBird EBD — observations + sampling (Cornell Lab of Ornithology) | TSV compressé | EPSG:4326 | [ebird.org/data/download](https://ebird.org/data/download) — sous [accord de confidentialité](https://www.birds.cornell.edu/home/ebird-data-access-terms-of-use/) |
 | Carte écoforestière avec perturbations (MFFP) | GDB / SHP | EPSG:32198 | [Données Québec](https://www.donneesquebec.ca/recherche/dataset/carte-ecoforestiere-avec-perturbations) |
-| Produits dérivés du LiDAR — MHC, MNT, Pentes (MRNF) | GeoTIFF 1 m | EPSG:32198 | [Données Québec](https://www.donneesquebec.ca/recherche/dataset/produits-derives-de-base-du-lidar) |
+| Produits dérivés du LiDAR — MHC, MNT, Pentes (MRNF) | GeoTIFF 1–2 m | EPSG:2949 → EPSG:32198 | [Données Québec](https://www.donneesquebec.ca/recherche/dataset/produits-derives-de-base-du-lidar) |
 | Landsat Collection 2 niveau-2 — température de surface estivale (bande `ST_B10`, composite STAC) | STAC → GeoTIFF 30 m | UTM 18/19N natif → EPSG:32198 | [Microsoft Planetary Computer](https://planetarycomputer.microsoft.com/dataset/landsat-c2-l2) (API STAC) |
 | Réseau routier — AQréseau+ (Adresses Québec) | SHP | Lambert conique MTQ → EPSG:32198 | [Données Québec](https://www.donneesquebec.ca/recherche/dataset/adresses-quebec) |
 | Milieux humides potentiels du Québec (v2023) — MELCCFP / Direction de la connaissance écologique | GPKG / FGDB | EPSG:32198 | [Données Québec](https://www.donneesquebec.ca/recherche/fr/dataset/milieux-humides-potentiels) — licence CC-BY 4.0 |
@@ -31,7 +31,7 @@ La zone d'étude est définie par le fichier [`data/zone_etude.gpkg`](data/zone_
 > **⚠️ Données non versionnées.** Les données brutes (~150 Go LiDAR, ~20 Go eBird) et confidentielles (eBird EBD) ne sont **jamais** poussées sur GitHub : tout le dossier `data/` est exclu via [`.gitignore`](.gitignore), à l'exception de l'emprise `data/zone_etude.gpkg` (~100 Ko) et des petits résultats `*.parquet` / `*.json`. Le script [`scripts_independants/telechargement_donnees.py`](scripts_independants/telechargement_donnees.py) documente l'acquisition.
 
 ## Modèle de données
-Le pipeline produit un **stack raster à 10 bandes** (`data/processed/stack_5m.tif`, ~3 Go, COG DEFLATE 512) et une **table modèle** (`data/processed/table_modele.parquet`) joignant les checklists eBird zero-fillées aux covariables extraites.
+Le pipeline produit un **stack raster à 10 bandes** (`data/processed/stack_5m.tif`, ~13 Go, COG DEFLATE 512) et une **table modèle** (`data/processed/table_modele.parquet`) joignant les checklists eBird zero-fillées aux covariables extraites.
 
 **Variables d'habitat (entrées du modèle, cartographiées) :**
 
@@ -76,8 +76,9 @@ flowchart TD
 
 | Script | Rôle | Livrable |
 |--------|------|----------|
-| `utils.py` | Fonctions partagées : I/O, CRS, focal stats, MESS | — |
-| `01_predictors.py` | LiDAR → tuiles 5 m → VRT → variables paysagères → stack | `stack_5m.tif` (10 bandes, ~3 Go) |
+| `utils.py` | Fonctions partagées : I/O COG, CRS/grille, focal stats, agrégation LiDAR fenêtrée, distance euclidienne, comblement, WhiteboxTools, MESS | — |
+| `ecoforestiere.py` | Encodage MFFP : âge (ordinal de maturité), densité (% couvert), type de couvert | — |
+| `01_predictors.py` | LiDAR + écoforestière + routes + milieux humides + LST → 10 bandes 5 m alignées → stack | `stack_5m.tif` (10 bandes, ~13 Go) |
 | `02_ebird.py` | EBD filtré → zero-fill → variables de détection → extraction covariables | `table_modele.parquet` |
 | `03_model.py` | RF + tuning + validation spatiale + importance + PDP | `rf.joblib`, métriques CV |
 | `04_predict.py` | Carte proba (fenêtrée) + incertitude + MESS + hotspots | GeoTIFF COG + GeoPackage |
@@ -92,7 +93,8 @@ Projet Python géré avec **`uv`** (`pyproject.toml` + `uv.lock` versionné pour
 | Vecteur | `geopandas` | clip, reprojection, jointures spatiales |
 | Raster | `rasterio` + `rioxarray` | `rasterio` pour les opérations fenêtrées ; `rioxarray` pour les stacks légères |
 | STAC / imagerie | `pystac-client` + `planetary-computer` + `odc-stac` | Requête du catalogue Landsat C2 L2, signature des URLs, chargement paresseux des scènes en `xarray` pour le composite de température de surface estivale |
-| Numérique | `numpy` + `scipy.ndimage` | focal stats via `uniform_filter` (séparable = rapide) |
+| Numérique | `numpy` + `scipy.ndimage` | focal stats via `uniform_filter` (séparable = rapide), distance euclidienne, comblement |
+| Hydrologie | `whitebox` (WhiteboxTools) | accumulation de flux D8 → TWI (binaire autonome ; `pyflwdir`/`richdem` incompatibles Python 3.13) |
 | Modèle | `scikit-learn` | RF + validation croisée spatiale + importance par permutation + PDP |
 | Soleil / lune | `astral` | minutes après coucher du soleil, fraction lunaire |
 | Cartes | `matplotlib` + `contextily` | fonds de carte OSM pour les cartes finales |
@@ -114,8 +116,8 @@ Projet Python géré avec **`uv`** (`pyproject.toml` + `uv.lock` versionné pour
 |-------|--------|
 | Acquisition des données (LiDAR, eBird, écoforestière) | ✅ Complété |
 | Initialisation du dépôt (structure, `.gitignore`, `pyproject.toml`, README) | ✅ Complété |
-| Intégration des nouvelles sources (composite Landsat STAC, milieux humides potentiels 2023) | ⏳ À faire |
-| `01_predictors.py` — stack 10 bandes à 5 m | ⏳ À faire |
+| Intégration des nouvelles sources (composite Landsat STAC, milieux humides potentiels 2023) | ✅ Complété |
+| `01_predictors.py` — stack 10 bandes à 5 m | ✅ Complété |
 | `02_ebird.py` — table modèle zero-fillée | ⏳ À faire |
 | `03_model.py` — Random Forest + validation spatiale | ⏳ À faire |
 | `04_predict.py` — cartes proba / incertitude / MESS / hotspots | ⏳ À faire |
@@ -128,8 +130,9 @@ Projet Python géré avec **`uv`** (`pyproject.toml` + `uv.lock` versionné pour
 - **Tuning** : `RandomizedSearchCV` (20 itérations) sur `n_estimators`, `max_features`, `min_samples_leaf`, `max_depth`.
 - **Résolution 5 m, CRS EPSG:32198** uniques pour tous les rasters et vecteurs ; rasters de sortie en COG DEFLATE blocksize 512 ; `random_state=42` partout.
 - **Extraction des covariables eBird** dans un buffer de 30 m autour du point GPS (précision eBird ≈ 5–30 m).
-- **Température — passage de CHELSA à un composite Landsat via STAC.** La variable thermique (Bio10 CHELSA, air, 1 km) est remplacée par un composite de **température de surface estivale (LST)** dérivé de **Landsat Collection 2 niveau-2** (bande `ST_B10`, 30 m natif) interrogé par un **pipeline STAC** (Microsoft Planetary Computer). Le composite est la moyenne des scènes claires (masque nuages/ombres via `QA_PIXEL`) de **juin–juillet sur toutes les années de la période d'échantillonnage eBird**, reprojeté et rééchantillonné à 5 m. Motif : résolution ~30× plus fine, capable de capter les microclimats de surface (clairières, lisières, coupes) pertinents pour l'habitat de l'espèce. *Caveat assumé* : la LST (température de peau du sol) diffère de la température de l'air ; elle est interprétée comme **proxy thermique de surface**, non comme macroclimat.
+- **Température — passage de CHELSA à un composite Landsat via STAC.** La variable thermique (Bio10 CHELSA, air, 1 km) est remplacée par un composite de **température de surface estivale (LST)** dérivé de **Landsat Collection 2 niveau-2** (bande `ST_B10`, 30 m natif) interrogé par un **pipeline STAC** (Microsoft Planetary Computer). Le composite est la **médiane** des scènes claires (masque nuages/ombres via `QA_PIXEL`, robuste aux résidus nuageux) de **juin–juillet sur toutes les années Landsat 8/9 (2013–2025)**, reprojeté et rééchantillonné à 5 m. Motif : résolution ~30× plus fine, capable de capter les microclimats de surface (clairières, lisières, coupes) pertinents pour l'habitat de l'espèce. *Caveat assumé* : la LST (température de peau du sol) diffère de la température de l'air ; elle est interprétée comme **proxy thermique de surface**, non comme macroclimat.
 - **Milieux humides — couche « Milieux humides potentiels du Québec » (MELCCFP, v2023)** en remplacement du Réseau hydrographique national (NHN/Canvec). Couverture provinciale homogène issue de la photo-interprétation 3D haute résolution (CIC / MELCCFP), mieux adaptée à l'échelle MRC pour la variable *Distance à un milieu humide*. Licence CC-BY 4.0 (attribution requise dans le rapport).
+- **Construction du stack de prédicteurs (grille, TWI, encodage écoforestier).** Toutes les bandes sont alignées **pixel-exact** sur la grille du composite LST (référence commune). Le LiDAR (natif **EPSG:2949**, 1–2 m) est reprojeté et agrégé en moyenne à 5 m par lecture en flux. Le **TWI** est calculé avec **WhiteboxTools** (percement des dépressions → accumulation de flux D8 → indice d'humidité) via un appel direct au binaire — `pyflwdir`/`richdem` étant incompatibles avec Python 3.13. L'écoforestière MFFP est encodée en variables numériques : **âge = ordinal de maturité 0–4** (les peuplements inéquiennes, ~30 %, n'ayant pas d'âge unique), **densité = % de couvert** (point milieu de classe), **non-forêt = 0**. Le stack final porte un **nodata en union** des bandes (un pixel n'est valide que si les 10 variables le sont).
 - **Parallélisation multi-cœurs (stratégie hybride).** Les traitements massifs exploitent tous les cœurs *là où c'est logique* : `Dask` (`LocalCluster`) pour les workflows raster/xarray (composite Landsat STAC, statistiques focales, algèbre raster fenêtrée, prédiction), `scikit-learn` (`n_jobs=-1`) pour l'entraînement et la validation du Random Forest, et `polars` (déjà multi-threadé) pour l'EBD. Le nombre de workers/threads et la limite mémoire sont pilotés par le fichier de configuration ; un tableau de bord Dask permet de suivre l'usage des ressources. On ne parallélise pas ce qui est déjà rapide ou déjà parallèle (surcoût inutile).
 - **Détail de type conservé pour extensions futures.** Les couches routes (AQréseau+, champ `ClsRte`) et milieux humides potentiels (champs `CLASSE`/`TYPE`/`CONFIANCE`) portent une classification fine. Le POC n'utilise que la *densité totale de routes* et la *distance à tout milieu humide*, mais ces attributs sont **préservés au prétraitement** : ils ouvrent, sans surcoût immédiat, des variables v2 stratifiées par type (effet différencié selon la classe de route — H3 raffinée ; distance aux milieux humides *ouverts* vs *boisés* pour un insectivore aérien).
 - **Variables exclues** (justifiées dans le rapport) : domaine bioclimatique (variance nulle à l'échelle MRC), pente (implicite dans le TWI), NDVI/NDWI (prétraitement Sentinel-2 hors budget), type de sol et autres redondances (corrélation / VIF élevé).
@@ -138,7 +141,7 @@ Projet Python géré avec **`uv`** (`pyproject.toml` + `uv.lock` versionné pour
 - **~150 Go de LiDAR brut à 1 m** : impossible à charger en mémoire. Solution adoptée — tout le pipeline fonctionne par fenêtres `rasterio.windows` et tuiles, avec `os.environ["GDAL_CACHEMAX"] = "512"` dans chaque worker. Repli 10 m possible (constante `RESOLUTION_M` dans `utils.py`) si la RAM est insuffisante.
 - **eBird EBD volumineux (~20 Go)** : lecture lazy via `polars.scan_csv()`, conversion `to_pandas()` uniquement à l'entrée de sklearn.
 - **Confidentialité eBird** : exclusion stricte des données brutes du dépôt Git (voir `.gitignore`).
-- **Couverture nuageuse du composite Landsat** : les scènes estivales dégagées sont rares certaines années ; le composite agrège **toutes les années eBird** (juin–juillet) avec masque `QA_PIXEL` pour maximiser le nombre d'observations claires par pixel. Repli documenté si des trous subsistent : élargissement de la fenêtre (juin–août) ou comblement par interpolation locale. Aucun téléchargement en masse — les scènes sont lues à la volée via l'API STAC (Planetary Computer).
+- **Couverture nuageuse du composite Landsat** : les scènes estivales dégagées sont rares certaines années ; le composite agrège **toutes les années eBird** (juin–juillet) avec masque `QA_PIXEL` pour maximiser le nombre d'observations claires par pixel. Aucun téléchargement en masse — les scènes sont lues à la volée via l'API STAC (Planetary Computer). Le composite obtenu présentait ~1 % de trous (NaN) : le diagnostic a montré qu'il s'agit de pixels où le **produit ST d'USGS est lui-même *fill*** (émissivité indisponible), même sur les scènes claires — ni nuages, ni eau. Élargir la fenêtre temporelle n'y change rien ; ils sont donc **comblés par interpolation locale** (IDW), pour un composite final à 0 % manquant.
 - **Couches vectorielles provinciales massives** : le réseau routier AQréseau+ (~1,5 M lignes) et les milieux humides potentiels (~2,4 M polygones) couvrent tout le Québec. Solution — lecture filtrée par emprise (`bbox` de la zone d'étude) au niveau du driver (jamais tout le Québec en RAM), reprojection des routes (Lambert conique MTQ → EPSG:32198), puis écriture de couches réduites en `data/interim/`.
 
 ---
