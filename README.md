@@ -118,15 +118,17 @@ Projet Python géré avec **`uv`** (`pyproject.toml` + `uv.lock` versionné pour
 | Initialisation du dépôt (structure, `.gitignore`, `pyproject.toml`, README) | ✅ Complété |
 | Intégration des nouvelles sources (composite Landsat STAC, milieux humides potentiels 2023) | ✅ Complété |
 | `01_predictors.py` — stack 10 bandes à 5 m | ✅ Complété |
-| `02_ebird.py` — table modèle zero-fillée | ⏳ À faire |
-| `03_model.py` — Random Forest + validation spatiale | ⏳ À faire |
-| `04_predict.py` — cartes proba / incertitude / MESS / hotspots | ⏳ À faire |
-| `05_figures.py` — figures du rapport | ⏳ À faire |
+| `02_ebird.py` — table modèle zero-fillée (17 440 checklists, 148 présences) | ✅ Complété |
+| `03_model.py` — Random Forest + validation spatiale (AUC 0.86–0.98) | ✅ Complété |
+| `04_predict.py` — cartes proba / incertitude / MESS / hotspots | ✅ Complété |
+| `05_figures.py` — figures du rapport | ✅ Complété |
+| Rapport final | ⏳ En cours |
 
 ## Décisions méthodologiques
 - **Modèle unique Random Forest présence-absence** (`class_weight="balanced"`) plutôt que MaxEnt : les listes complètes eBird zero-fillées (`auk_zerofill`) fournissent des absences confirmées, plus robustes que les méthodes présence-seule. MaxEnt retiré pour concentrer l'effort sur un pipeline reproductible et bien validé.
-- **Filtres d'effort** (Johnston et al. 2021) : protocoles Stationary/Traveling, listes complètes, durée ≤ 300 min, distance ≤ 5 km, ≤ 10 observateurs, saison juin–juillet (pic d'activité vocale).
-- **Validation spatiale** : `GroupKFold` avec blocs spatiaux de 10 km pour découpler l'autocorrélation spatiale ; métriques AUC-ROC + TSS sur 5 folds.
+- **Filtres d'effort** (Johnston et al. 2021) : protocoles Stationary/Traveling, listes complètes, durée ≤ 300 min, distance ≤ 5 km, ≤ 10 observateurs, saison juin–juillet (pic d'activité vocale). **Plancher d'année 2010** : les covariables étant un instantané contemporain (LiDAR/écoforestière récents, composite LST 2013–2025), les observations antérieures ne sont pas rattachées à des prédicteurs actuels. Le zero-fill (`auk`, R) est réutilisé comme entrée : 2,9 M checklists → **17 440 dans l'emprise après filtres, 148 présences** (ratio 0,85 %).
+- **Validation spatiale** : blocs spatiaux de 10 km pour découpler l'autocorrélation. `StratifiedGroupKFold` (plutôt que `GroupKFold`) est retenu vu le fort déséquilibre — 148 présences réparties sur 28 blocs seulement, dont un concentre 20 % des présences — afin d'équilibrer présence/absence entre folds tout en ne scindant jamais un bloc (paramètre `modele.cv_stratifie`). Métriques AUC-ROC + TSS sur 5 folds.
+- **Deux modèles Random Forest complémentaires.** Les variables de détection dominent la discrimination (l'engoulevent nocturne n'est détecté qu'au crépuscule) : le modèle **combiné** (14 var) atteint une AUC de 0.978 mais l'importance de l'habitat y est masquée. On entraîne donc aussi un modèle **habitat seul** (10 var, AUC 0.859) pour une importance et des PDP propres à l'interprétation des hypothèses H1–H4 (top prédicteur : **élévation**, puis proportion feuillu/mélangé, densité de routes). La **carte** est produite par le modèle combiné, la détection **fixée à des valeurs standardisées** (médiane des présences ≈ crépuscule) — approche Johnston.
 - **Tuning** : `RandomizedSearchCV` (20 itérations) sur `n_estimators`, `max_features`, `min_samples_leaf`, `max_depth`.
 - **Résolution 5 m, CRS EPSG:32198** uniques pour tous les rasters et vecteurs ; rasters de sortie en COG DEFLATE blocksize 512 ; `random_state=42` partout.
 - **Extraction des covariables eBird** dans un buffer de 30 m autour du point GPS (précision eBird ≈ 5–30 m).
