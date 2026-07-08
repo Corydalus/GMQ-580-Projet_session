@@ -14,12 +14,15 @@ zone_etude:
 
 ebird:
   mois_saison: [6, 7]            # juin–juillet (pic d'activité vocale)
+  annee_min: 2010                # plancher : covariables = instantané contemporain (null = aucun)
   duree_max_min: 300
   distance_max_km: 5
   observateurs_max: 10
   protocoles: ["Stationary", "Traveling"]
   listes_completes: true
   buffer_m: 30                   # extraction des covariables autour du point GPS
+  fuseau: "America/Toronto"      # fuseau local (DST) pour minutes_apres_coucher
+  zerofill_csv: "data/processed/ebird/zerofill_engoulevent_bois_pourri.csv"  # zero-fill auk (entrée J4)
 
 climat_stac:
   collection: "landsat-c2-l2"

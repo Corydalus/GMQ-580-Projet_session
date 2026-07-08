@@ -52,17 +52,27 @@ def _mois_valides(v: list[int]) -> list[int]:
 
 class EbirdCfg(_Base):
     mois_saison: list[int]
+    annee_min: int | None = None  # plancher d'année des checklists (None = aucun)
     duree_max_min: float = Field(gt=0)
     distance_max_km: float = Field(gt=0)
     observateurs_max: int = Field(gt=0)
     protocoles: list[str]
     listes_completes: bool = True
     buffer_m: float = Field(30, gt=0)
+    fuseau: str = "America/Toronto"  # fuseau local (DST) pour minutes_apres_coucher
+    zerofill_csv: str = "data/processed/ebird/zerofill_engoulevent_bois_pourri.csv"
 
     @field_validator("mois_saison")
     @classmethod
     def _mois(cls, v: list[int]) -> list[int]:
         return _mois_valides(v)
+
+    @field_validator("annee_min")
+    @classmethod
+    def _annee(cls, v: int | None) -> int | None:
+        if v is not None and not (1900 <= v <= 2100):
+            raise ValueError("annee_min doit être null ou une année plausible (1900..2100)")
+        return v
 
 
 class ClimatStacCfg(_Base):
