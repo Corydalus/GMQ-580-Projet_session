@@ -46,9 +46,10 @@ focal:                           # fenêtres des statistiques focales (m)
 
 modele:
   random_state: 42
-  bloc_cv_km: 10                 # blocs spatiaux GroupKFold
+  bloc_cv_km: 10                 # blocs spatiaux (km) pour la CV spatiale
   n_folds: 5
   n_iter_recherche: 20           # itérations RandomizedSearchCV
+  cv_stratifie: true             # true = StratifiedGroupKFold (déséquilibre) ; false = GroupKFold
 
 sources:                         # entrées vectorielles (voir README → sources)
   ecoforestiere: "data/processed/ebird/peuplement_ecoforestier.gpkg"

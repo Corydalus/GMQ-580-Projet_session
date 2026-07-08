@@ -115,6 +115,7 @@ class ModeleCfg(_Base):
     bloc_cv_km: float = Field(10, gt=0)
     n_folds: int = Field(5, ge=2)
     n_iter_recherche: int = Field(20, ge=1)
+    cv_stratifie: bool = True  # True = StratifiedGroupKFold (imbalance) ; False = GroupKFold
 
 
 class CheminsCfg(_Base):
