@@ -26,6 +26,7 @@ dependencies = [
     "dask[distributed]>=2024.1",  # calcul chunké + LocalCluster multi-cœurs (dashboard)
     "pyyaml>=6.0",       # lecture de config.yaml
     "pydantic>=2.6",     # validation typée de la config
+    "whitebox>=2.3.6",
 ]
 
 [project.optional-dependencies]

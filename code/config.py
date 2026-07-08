@@ -90,6 +90,16 @@ class ClimatStacCfg(_Base):
         return v
 
 
+class LidarCfg(_Base):
+    twi_breach_dist_px: int = Field(100, gt=0)  # percement max des dépressions (cellules), TWI
+
+
+class FocalCfg(_Base):
+    lisiere_m: float = Field(1000, gt=0)  # var 3, densité de lisière forêt-ouvert
+    feuillu_m: float = Field(500, gt=0)   # var 4, proportion feuillu/mélangé
+    routes_m: float = Field(1000, gt=0)   # var 5, densité de routes
+
+
 class ModeleCfg(_Base):
     random_state: int = 42
     bloc_cv_km: float = Field(10, gt=0)
@@ -102,6 +112,14 @@ class CheminsCfg(_Base):
     interim: str = "data/interim"
     processed: str = "data/processed"
     outputs: str = "outputs"
+
+
+class SourcesCfg(_Base):
+    ecoforestiere: str = "data/processed/ebird/peuplement_ecoforestier.gpkg"
+    ecoforestiere_couche: str = "pee"
+    routes: str = "data/raw/Routes_AQreseauPlus_ESRI(SHP)/Reseau_routier.shp"
+    milieux_humides: str = "data/raw/mh_potentiel_2023.gpkg"
+    milieux_humides_couche: str = "mh_potentiel_qc"
 
 
 class CalculCfg(_Base):
@@ -129,8 +147,11 @@ class Config(_Base):
     zone_etude: ZoneEtudeCfg
     ebird: EbirdCfg
     climat_stac: ClimatStacCfg
+    lidar: LidarCfg = LidarCfg()
+    focal: FocalCfg = FocalCfg()
     modele: ModeleCfg
     chemins: CheminsCfg
+    sources: SourcesCfg = SourcesCfg()
     calcul: CalculCfg = CalculCfg()
     variables: VariablesCfg = VariablesCfg()
 

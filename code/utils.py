@@ -198,6 +198,82 @@ def reproject_to_grid(src_array: np.ndarray, src_transform, src_crs,
     return dst
 
 
+def wbt_run(tool: str, work_dir: str | Path | None = None, **params) -> str:
+    """Exécute un outil WhiteboxTools via son binaire (robuste aux espaces du chemin).
+
+    Télécharge le binaire au 1er appel si absent, le rend exécutable, puis lance
+    `whitebox_tools --run=<tool> --<param>=<valeur> …`. Lève RuntimeError si échec.
+    Appel direct au binaire pour contourner un bug du wrapper Python avec les chemins
+    contenant des espaces.
+    """
+    import stat
+    import subprocess
+
+    import whitebox
+    exe = Path(whitebox.__file__).parent / "WBT" / "whitebox_tools"
+    if not exe.exists():
+        whitebox.WhiteboxTools()                 # déclenche le téléchargement du binaire
+    os.chmod(exe, os.stat(exe).st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
+    args = [str(exe), f"--run={tool}"]
+    if work_dir is not None:
+        args.append(f"--wd={work_dir}")
+    args += [f"--{k}={v}" for k, v in params.items()]
+    args.append("-v=false")
+    res = subprocess.run(args, capture_output=True, text=True)
+    if res.returncode != 0:
+        raise RuntimeError(f"WhiteboxTools {tool} a échoué :\n{(res.stderr or res.stdout)[-500:]}")
+    return res.stdout
+
+
+def lire_grille_reference(path: str | Path):
+    """Retourne (crs, transform, width, height) d'un raster servant de grille de référence."""
+    import rasterio
+    with rasterio.open(path) as ds:
+        return ds.crs, ds.transform, ds.width, ds.height
+
+
+def agreger_tuiles_vers_grille(tuiles, ref_crs, ref_transform, width: int, height: int,
+                               resampling: str = "average",
+                               dst_nodata: float = float("nan")) -> np.ndarray:
+    """Reprojette/agrège des tuiles raster (autre CRS/résolution) sur une grille de référence.
+
+    Chaque tuile est lue en flux (jamais toute la mosaïque en RAM) et reprojetée dans sa
+    fenêtre de la grille cible (`resampling`, ex. 'average' pour agréger 1 m → 5 m). Les
+    tuiles ne se chevauchant pas, on écrit les valeurs valides dans la sortie accumulée.
+    """
+    import math
+
+    import rasterio
+    from rasterio.warp import Resampling, reproject, transform_bounds
+    from rasterio.windows import Window
+    from rasterio.windows import transform as window_transform
+
+    out = np.full((height, width), dst_nodata, dtype="float32")
+    for fp in tuiles:
+        with rasterio.open(fp) as src:
+            left, bottom, right, top = transform_bounds(src.crs, ref_crs, *src.bounds,
+                                                        densify_pts=21)
+            inv = ~ref_transform                      # coords carte → indices (col, row)
+            c0, r0 = inv * (left, top)
+            c1, r1 = inv * (right, bottom)
+            col_off = max(0, math.floor(min(c0, c1)))
+            row_off = max(0, math.floor(min(r0, r1)))
+            col_end = min(width, math.ceil(max(c0, c1)))
+            row_end = min(height, math.ceil(max(r0, r1)))
+            if col_end <= col_off or row_end <= row_off:
+                continue                              # tuile hors grille
+            win = Window(col_off, row_off, col_end - col_off, row_end - row_off)
+            dst = np.full((int(win.height), int(win.width)), dst_nodata, dtype="float32")
+            reproject(source=rasterio.band(src, 1), destination=dst,
+                      dst_transform=window_transform(win, ref_transform), dst_crs=ref_crs,
+                      src_nodata=src.nodata, dst_nodata=dst_nodata,
+                      resampling=getattr(Resampling, resampling), num_threads=2)
+            sub = out[row_off:row_end, col_off:col_end]
+            valide = np.isfinite(dst) if np.isnan(dst_nodata) else (dst != dst_nodata)
+            sub[valide] = dst[valide]
+    return out
+
+
 def combler_nodata(arr: np.ndarray, max_dist: int, smoothing: int = 0) -> np.ndarray:
     """Comble les NaN par interpolation locale (IDW, `rasterio.fill.fillnodata`).
 
@@ -214,6 +290,36 @@ def combler_nodata(arr: np.ndarray, max_dist: int, smoothing: int = 0) -> np.nda
     non_comble = ~np.isfinite(arr) & (rempli == 0.0) & ~valide   # hors portée → reste NaN
     rempli[non_comble] = np.nan
     return rempli
+
+
+def lire_vecteur_zone(chemin: str | Path, zone_gpkg: str | Path, crs_cible,
+                      couche: str | None = None, buffer_m: float = 0.0):
+    """Lit une couche vectorielle filtrée par l'emprise de la zone (bbox côté driver, §3.4).
+
+    La bbox est calculée dans le CRS *source* de la couche (jamais toute la province en
+    RAM), puis le résultat clippé est reprojeté vers `crs_cible`. `buffer_m` élargit la
+    bbox (unités du CRS source) pour les effets de bord focaux.
+    """
+    import geopandas as gpd
+    import pyogrio
+    crs_src = pyogrio.read_info(str(chemin), layer=couche)["crs"]
+    zone = gpd.read_file(zone_gpkg).to_crs(crs_src)
+    minx, miny, maxx, maxy = zone.total_bounds
+    bbox = (minx - buffer_m, miny - buffer_m, maxx + buffer_m, maxy + buffer_m)
+    gdf = gpd.read_file(chemin, layer=couche, bbox=bbox)
+    return gdf.to_crs(crs_cible)
+
+
+def distance_euclidienne(mask: np.ndarray, resolution: float) -> np.ndarray:
+    """Distance euclidienne (m) de chaque cellule au pixel `True` le plus proche.
+
+    `mask` True = présence (p. ex. milieu humide). Tout-False → tableau de NaN.
+    """
+    from scipy.ndimage import distance_transform_edt
+    mask = np.asarray(mask, dtype=bool)
+    if not mask.any():
+        return np.full(mask.shape, np.nan, dtype="float32")
+    return (distance_transform_edt(~mask) * resolution).astype("float32")
 
 
 # ── MESS — Multivariate Environmental Similarity Surface (utilisée à J6) ─────

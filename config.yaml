@@ -33,11 +33,26 @@ climat_stac:
   combler_trous: true            # comble les trous du produit ST (USGS fill) par interpolation
   comblement_max_px: 100         # distance de recherche max (px natifs 30 m) pour le comblement
 
+lidar:
+  twi_breach_dist_px: 100        # distance max de percement des dépressions (cellules) pour le TWI
+
+focal:                           # fenêtres des statistiques focales (m)
+  lisiere_m: 1000                # var 3, densité de lisière forêt-ouvert
+  feuillu_m: 500                 # var 4, proportion feuillu/mélangé
+  routes_m: 1000                 # var 5, densité de routes
+
 modele:
   random_state: 42
   bloc_cv_km: 10                 # blocs spatiaux GroupKFold
   n_folds: 5
   n_iter_recherche: 20           # itérations RandomizedSearchCV
+
+sources:                         # entrées vectorielles (voir README → sources)
+  ecoforestiere: "data/processed/ebird/peuplement_ecoforestier.gpkg"
+  ecoforestiere_couche: "pee"
+  routes: "data/raw/Routes_AQreseauPlus_ESRI(SHP)/Reseau_routier.shp"
+  milieux_humides: "data/raw/mh_potentiel_2023.gpkg"
+  milieux_humides_couche: "mh_potentiel_qc"
 
 chemins:
   raw: "data/raw"
