@@ -198,6 +198,24 @@ def reproject_to_grid(src_array: np.ndarray, src_transform, src_crs,
     return dst
 
 
+def combler_nodata(arr: np.ndarray, max_dist: int, smoothing: int = 0) -> np.ndarray:
+    """Comble les NaN par interpolation locale (IDW, `rasterio.fill.fillnodata`).
+
+    `max_dist` : distance de recherche max (pixels) ; les trous plus profonds restent NaN.
+    Retourne un float32 ; les pixels non comblés (hors portée) conservent NaN.
+    """
+    from rasterio.fill import fillnodata
+    arr = np.asarray(arr, dtype="float32")
+    valide = np.isfinite(arr)
+    image = np.where(valide, arr, 0.0).astype("float32")   # fillnodata n'aime pas les NaN
+    rempli = fillnodata(image, mask=valide.astype("uint8"),
+                        max_search_distance=float(max_dist), smoothing_iterations=smoothing)
+    rempli = np.asarray(rempli, dtype="float32")
+    non_comble = ~np.isfinite(arr) & (rempli == 0.0) & ~valide   # hors portée → reste NaN
+    rempli[non_comble] = np.nan
+    return rempli
+
+
 # ── MESS — Multivariate Environmental Similarity Surface (utilisée à J6) ─────
 
 def mess(proj: np.ndarray, ref) -> np.ndarray:

@@ -264,6 +264,17 @@ def construire_composite_lst(cfg, sortie: str | Path | None = None,
         mosaic = mosaiquer_tuiles(chemins_tuiles)
         lst30 = mosaic.isel(band=0).rio.write_crs(cfg.zone_etude.crs)
         n_clair30 = mosaic.isel(band=1).values
+        # Comblement des trous du produit ST USGS (fill sur scènes claires, pas des nuages) :
+        # interpolation locale au natif 30 m avant rééchantillonnage. Voir CLAUDE.md §3.1.
+        rapport["pct_manquant_brut"] = round(float((~np.isfinite(lst30.values)).mean() * 100), 2)
+        if cfg.climat_stac.combler_trous:
+            vals = lst30.values
+            n_avant = int(np.isnan(vals).sum())
+            comble = utils.combler_nodata(vals, cfg.climat_stac.comblement_max_px)
+            rapport["n_pixels_combles"] = n_avant - int(np.isnan(comble).sum())
+            lst30 = lst30.copy(data=comble)
+            log.info("Trous ST comblés : %d px (interpolation locale, max %d px natifs)",
+                     rapport["n_pixels_combles"], cfg.climat_stac.comblement_max_px)
         lst5 = lst30.rio.reproject(cfg.zone_etude.crs, resolution=res_finale,
                                    resampling=Resampling.bilinear)
         lst5.attrs["long_name"] = "lst_c"            # mono-bande (mosaïque → 2 noms sinon)

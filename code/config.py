@@ -74,6 +74,8 @@ class ClimatStacCfg(_Base):
     reducteur: str = "median"
     resolution_native_m: float = Field(30, gt=0)  # résolution native Landsat
     tuile_px: int = Field(1024, gt=0)  # taille de tuile (px) pour checkpoint/reprise
+    combler_trous: bool = True  # interpolation locale des trous du produit ST (USGS fill)
+    comblement_max_px: int = Field(100, gt=0)  # distance de recherche max (px natifs)
 
     @field_validator("mois")
     @classmethod

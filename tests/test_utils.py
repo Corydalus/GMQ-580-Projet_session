@@ -87,3 +87,30 @@ def test_iter_windows_couvre_tout():
     fenetres = list(utils.iter_windows(10, 10, tile=4))
     aire = sum(w.width * w.height for w in fenetres)
     assert aire == 100          # 10x10 entièrement couvert, sans chevauchement
+
+
+def test_combler_nodata_comble_et_respecte_portee():
+    pytest.importorskip("rasterio")
+    # Trou central comblable (portée suffisante) → valeur plausible, plus de NaN.
+    a = np.full((7, 7), 25.0, dtype="float32")
+    a[2:5, 2:5] = np.nan
+    r = utils.combler_nodata(a, max_dist=5)
+    assert np.isfinite(r).all()
+    assert r[3, 3] == pytest.approx(25.0, abs=0.5)
+
+    # Trou plus profond que la portée → le cœur reste NaN (pas d'invention à distance).
+    c = np.full((40, 40), 25.0, dtype="float32")
+    c[0:12, 0:12] = np.nan
+    rc = utils.combler_nodata(c, max_dist=3)
+    assert np.isnan(rc[0, 0])                       # coin hors portée
+    assert np.isnan(rc).sum() < 144                 # mais le pourtour est comblé
+
+
+def test_combler_nodata_interpole_gradient():
+    pytest.importorskip("rasterio")
+    grad = np.tile(np.linspace(20, 30, 11, dtype="float32"), (11, 1))
+    grad[4:7, 4:7] = np.nan
+    r = utils.combler_nodata(grad, max_dist=6)
+    # au trou, la valeur suit le gradient horizontal (croissante de gauche à droite)
+    assert r[5, 4] < r[5, 6]
+    assert 22 < r[5, 5] < 28

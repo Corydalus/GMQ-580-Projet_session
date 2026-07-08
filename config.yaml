@@ -30,6 +30,8 @@ climat_stac:
   reducteur: "median"            # median | mean
   resolution_native_m: 30        # résolution native Landsat (m)
   tuile_px: 1024                 # taille de tuile (px) pour checkpoint/reprise
+  combler_trous: true            # comble les trous du produit ST (USGS fill) par interpolation
+  comblement_max_px: 100         # distance de recherche max (px natifs 30 m) pour le comblement
 
 modele:
   random_state: 42
