@@ -23,11 +23,13 @@ data/processed/*
 # ════════════════════════════════════════════════════════════════════════════
 #  OUTPUTS lourds
 # ════════════════════════════════════════════════════════════════════════════
-# Lourds : cartes / modèles / logs — y compris sous un dossier de sortie de MÉTHODE
+# Lourds : cartes / modèles — y compris sous un dossier de sortie de MÉTHODE
 # (config à chemins.outputs dédié, p. ex. outputs/sans_elevation/). Tout est regénérable.
 outputs/**/maps/
 outputs/**/models/
-outputs/**/logs/
+# Logs : traces verbeuses ignorées, MAIS on garde les rapports de métriques (*_rapport.json)
+# — socle quantitatif reproductible du rapport (petits, sans données sensibles).
+outputs/**/logs/*.log
 # Garder les figures légères et les tableaux CSV/parquet de résultats (production + variantes)
 !outputs/figures/
 !outputs/tables/
