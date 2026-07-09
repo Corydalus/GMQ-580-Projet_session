@@ -50,6 +50,8 @@ modele:
   n_folds: 5
   n_iter_recherche: 20           # itérations RandomizedSearchCV
   cv_stratifie: true             # true = StratifiedGroupKFold (déséquilibre) ; false = GroupKFold
+  shap_echantillon: 2000         # taille d'échantillon pour les valeurs SHAP (0 = toutes les checklists)
+  diagnostic_spatial: true       # ajoute x,y en diagnostic → teste si l'élévation est un proxy spatial
 
 sources:                         # entrées vectorielles (voir README → sources)
   ecoforestiere: "data/processed/ebird/peuplement_ecoforestier.gpkg"
@@ -74,3 +76,16 @@ calcul:                          # parallélisation (voir CLAUDE.md §3.7)
 variables:                       # interrupteurs des variantes v2 (voir CLAUDE.md §3.5)
   routes_par_type: false         # densités séparées par ClsRte
   milieux_humides_par_type: false  # distances par CLASSE/TYPE
+
+figures:                         # rendu des cartes (05_figures.py)
+  # ClsRte (AQréseau+) tracées sur les cartes : grandes voies seulement (lisibilité).
+  routes_classes_principales:
+    - "Autoroute"
+    - "Nationale"
+    - "Régionale"
+    - "Artère"
+    - "Collectrice municipale"
+    - "Collectrice de transit"
+  # Fenêtre de détection (min après le coucher du soleil), crépuscule → nuit : ~90 % des
+  # détections d'engoulevent y tombent. Sert à cartographier l'effort eBird pertinent.
+  fenetre_detection_apres_coucher_min: [-60, 450]

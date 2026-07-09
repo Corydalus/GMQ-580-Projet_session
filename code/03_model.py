@@ -140,6 +140,88 @@ def pdp_habitat(model, X: np.ndarray, features: list[str]) -> dict:
     return out
 
 
+# ── SHAP & diagnostic spatial de l'élévation ─────────────────────────────────
+
+def echantillon_shap(y: np.ndarray, taille: int, random_state: int) -> np.ndarray:
+    """Indices d'un échantillon SHAP : toutes les présences + des absences tirées (0 = tout)."""
+    n = len(y)
+    if not taille or taille >= n:
+        return np.arange(n)
+    rng = np.random.default_rng(random_state)
+    pres = np.where(y == 1)[0]
+    absc = np.where(y == 0)[0]
+    n_abs = min(max(taille - len(pres), 0), len(absc))
+    return np.sort(np.concatenate([pres, rng.choice(absc, size=n_abs, replace=False)]))
+
+
+def valeurs_shap(model, X: np.ndarray) -> tuple[np.ndarray, float]:
+    """Valeurs SHAP de la classe présence (TreeExplainer), robuste aux versions de shap."""
+    import shap
+    exp = shap.TreeExplainer(model)(X, check_additivity=False)
+    vals, base = exp.values, np.asarray(exp.base_values)
+    if vals.ndim == 3:  # (n, features, classes) → classe présence
+        return vals[:, :, 1], float(base[..., 1].mean())
+    return vals, float(base.mean())
+
+
+def shap_habitat(model, X: np.ndarray, y: np.ndarray, cfg: Config) -> dict:
+    """Valeurs SHAP (classe présence) du modèle habitat sur un échantillon + importance |SHAP| moyenne."""
+    idx = echantillon_shap(y, cfg.modele.shap_echantillon, cfg.modele.random_state)
+    vals, base = valeurs_shap(model, X[idx])
+    imp = sorted(
+        [dict(variable=f, importance_shap=round(float(np.abs(vals[:, j]).mean()), 5))
+         for j, f in enumerate(FEATURES_HABITAT)],
+        key=lambda d: d["importance_shap"], reverse=True)
+    return dict(values=vals, data=X[idx], presence=y[idx], base_value=base,
+                mean_abs=imp, n_echantillon=int(len(idx)))
+
+
+def _r2_lineaire(cible: np.ndarray, *regresseurs: np.ndarray) -> float:
+    """R² d'une régression linéaire (moindres carrés) de `cible` sur les régresseurs + constante."""
+    a = np.column_stack([np.ones_like(cible), *regresseurs])
+    beta, *_ = np.linalg.lstsq(a, cible, rcond=None)
+    ss_res = float(np.sum((cible - a @ beta) ** 2))
+    ss_tot = float(np.sum((cible - cible.mean()) ** 2))
+    return round(1.0 - ss_res / ss_tot, 4) if ss_tot > 0 else 0.0
+
+
+def diagnostic_elevation(X: np.ndarray, y: np.ndarray, groups: np.ndarray, df: pl.DataFrame,
+                         cv, cfg: Config, best_params: dict,
+                         importance_habitat: list[dict]) -> dict:
+    """Teste si l'élévation agit comme proxy spatial.
+
+    (1) structure spatiale de l'élévation (R² élévation~x,y ; corrélations) ;
+    (2) ajout des coordonnées x,y au modèle habitat (mêmes hyperparams) → effet sur
+    l'importance/rang de l'élévation et sur l'AUC spatiale. Une chute marquée de
+    l'importance de l'élévation quand x,y sont présents signale un proxy spatial.
+    """
+    x, yc = df["x"].to_numpy(), df["y"].to_numpy()
+    elev = X[:, FEATURES.index("elevation")]
+    rang_sans = {d["variable"]: i + 1 for i, d in enumerate(importance_habitat)}
+    imp_sans = {d["variable"]: d["importance"] for d in importance_habitat}
+
+    xh = X[:, [FEATURES.index(f) for f in FEATURES_HABITAT]]
+    xhxy = np.column_stack([xh, x, yc])
+    feats_xy = FEATURES_HABITAT + ["x", "y"]
+    mod_xy = _rf(cfg, n_jobs=-1, **best_params).fit(xhxy, y)
+    imp_xy = importance_permutation(mod_xy, xhxy, y, cfg, feats_xy)
+    rang_avec = {d["variable"]: i + 1 for i, d in enumerate(imp_xy)}
+    imp_avec = {d["variable"]: d["importance"] for d in imp_xy}
+
+    auc_sans = evaluer_spatial(best_params, xh, y, groups, cv, cfg)["auc_moy"]
+    auc_avec = evaluer_spatial(best_params, xhxy, y, groups, cv, cfg)["auc_moy"]
+    return dict(
+        r2_elevation_xy=_r2_lineaire(elev, x, yc),
+        corr_elevation_x=round(float(np.corrcoef(elev, x)[0, 1]), 4),
+        corr_elevation_y=round(float(np.corrcoef(elev, yc)[0, 1]), 4),
+        elevation_sans_coords=dict(importance=imp_sans["elevation"], rang=rang_sans["elevation"]),
+        elevation_avec_coords=dict(importance=imp_avec["elevation"], rang=rang_avec["elevation"]),
+        coords=dict(x=dict(importance=imp_avec["x"], rang=rang_avec["x"]),
+                    y=dict(importance=imp_avec["y"], rang=rang_avec["y"])),
+        auc_habitat=auc_sans, auc_habitat_xy=auc_avec,
+        importance_avec_coords=imp_xy)
+
+
 # ── Orchestration ────────────────────────────────────────────────────────────
 
 def charger_donnees(cfg: Config) -> tuple[np.ndarray, np.ndarray, np.ndarray, pl.DataFrame]:
@@ -219,6 +301,34 @@ def main() -> None:
 
     models_dir = Path(cfg.chemins.outputs) / "models"
     models_dir.mkdir(parents=True, exist_ok=True)
+
+    # Interprétation SHAP du modèle habitat (valeurs de Shapley, classe présence).
+    x_hab = X[:, [FEATURES.index(f) for f in FEATURES_HABITAT]]
+    with utils.log_step("Valeurs SHAP (modèle habitat)", log):
+        sh = shap_habitat(modele_habitat, x_hab, y, cfg)
+        np.savez_compressed(models_dir / "shap_habitat.npz", values=sh["values"], data=sh["data"],
+                            presence=sh["presence"], base_value=sh["base_value"],
+                            features=np.array(FEATURES_HABITAT))
+        rapport["shap_habitat"] = dict(mean_abs=sh["mean_abs"], n_echantillon=sh["n_echantillon"],
+                                       base_value=round(sh["base_value"], 5),
+                                       npz=str(models_dir / "shap_habitat.npz"))
+        log.info("  SHAP top 3 (|SHAP| moy) : %s", ", ".join(
+            f"{d['variable']}={d['importance_shap']:.3f}" for d in sh["mean_abs"][:3]))
+
+    # Diagnostic : l'élévation est-elle un proxy spatial ? (ajout des coordonnées x,y)
+    if cfg.modele.diagnostic_spatial:
+        with utils.log_step("Diagnostic spatial de l'élévation (ajout x,y)", log):
+            diag = diagnostic_elevation(X, y, groups, df, cv, cfg, habitat["best_params"],
+                                        habitat["importance"])
+            rapport["diagnostic_elevation"] = diag
+            log.info("  élévation : imp %.3f (rang %d) → %.3f (rang %d) avec x,y ; "
+                     "R²(élév~x,y)=%.2f ; AUC habitat %.3f → %.3f (+x,y)",
+                     diag["elevation_sans_coords"]["importance"],
+                     diag["elevation_sans_coords"]["rang"],
+                     diag["elevation_avec_coords"]["importance"],
+                     diag["elevation_avec_coords"]["rang"], diag["r2_elevation_xy"],
+                     diag["auc_habitat"], diag["auc_habitat_xy"])
+
     with utils.log_step("Export des modèles et des PDP", log):
         # rf.joblib = modèle de prédiction (J6) ; détection à fixer à `detection_standard`.
         joblib.dump(dict(modele=modele_combine, features=FEATURES,

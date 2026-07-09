@@ -116,6 +116,8 @@ class ModeleCfg(_Base):
     n_folds: int = Field(5, ge=2)
     n_iter_recherche: int = Field(20, ge=1)
     cv_stratifie: bool = True  # True = StratifiedGroupKFold (imbalance) ; False = GroupKFold
+    shap_echantillon: int = Field(2000, ge=0)  # taille d'échantillon SHAP (0 = toutes les checklists)
+    diagnostic_spatial: bool = True  # ajoute x,y en diagnostic (test du proxy spatial de l'élévation)
 
 
 class CheminsCfg(_Base):
@@ -153,6 +155,29 @@ class VariablesCfg(_Base):
     milieux_humides_par_type: bool = False
 
 
+class FiguresCfg(_Base):
+    # Classes ClsRte (AQréseau+) tracées sur les cartes de résultat : grandes voies
+    # uniquement (on écarte « Locale », « Sans classe », etc.) pour la lisibilité.
+    routes_classes_principales: list[str] = Field(
+        default_factory=lambda: [
+            "Autoroute", "Nationale", "Régionale", "Artère",
+            "Collectrice municipale", "Collectrice de transit",
+        ]
+    )
+    # Fenêtre de détection [début, fin] en minutes après le coucher du soleil (crépuscule → nuit).
+    # Sert à ne cartographier que l'effort eBird pertinent pour un nocturne (engoulevent).
+    fenetre_detection_apres_coucher_min: list[float] = Field(
+        default_factory=lambda: [-60.0, 450.0]
+    )
+
+    @field_validator("fenetre_detection_apres_coucher_min")
+    @classmethod
+    def _fenetre(cls, v: list[float]) -> list[float]:
+        if len(v) != 2 or v[0] >= v[1]:
+            raise ValueError("fenetre_detection_apres_coucher_min doit être [début, fin] avec début < fin")
+        return v
+
+
 class Config(_Base):
     espece: EspeceCfg
     zone_etude: ZoneEtudeCfg
@@ -165,6 +190,7 @@ class Config(_Base):
     sources: SourcesCfg = SourcesCfg()
     calcul: CalculCfg = CalculCfg()
     variables: VariablesCfg = VariablesCfg()
+    figures: FiguresCfg = FiguresCfg()
 
 
 def load_config(path: str | Path = CONFIG_DEFAUT) -> Config:

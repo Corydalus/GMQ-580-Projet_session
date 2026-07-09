@@ -35,6 +35,13 @@ def test_config_rejette_reducteur_invalide(sample_config_dict):
         config.Config.model_validate(bad)
 
 
+def test_config_rejette_fenetre_detection_invalide(sample_config_dict):
+    bad = copy.deepcopy(sample_config_dict)
+    bad["figures"] = {"fenetre_detection_apres_coucher_min": [450, -60]}  # début ≥ fin
+    with pytest.raises(ValidationError):
+        config.Config.model_validate(bad)
+
+
 def test_config_rejette_cle_inconnue(sample_config_dict):
     bad = copy.deepcopy(sample_config_dict)
     bad["zone_etude"]["crss"] = "EPSG:4326"      # faute de frappe → extra="forbid"
