@@ -153,6 +153,9 @@ class CalculCfg(_Base):
 class VariablesCfg(_Base):
     routes_par_type: bool = False
     milieux_humides_par_type: bool = False
+    # Variables d'habitat à retirer du modèle (exploration : p. ex. ["elevation"]).
+    # [] = jeu complet. Voir code/03_model.features_effectifs et 04_predict.
+    exclure: list[str] = Field(default_factory=list)
 
 
 class FiguresCfg(_Base):

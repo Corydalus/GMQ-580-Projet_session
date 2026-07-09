@@ -59,6 +59,16 @@ def test_fig_carte_mess_centre0_fidele(tmp_path):
     assert _existe_non_vide(out)
 
 
+def test_fig_comparaison_cartes(tmp_path):
+    m = _charger_figures()
+    r1, r2 = tmp_path / "a.tif", tmp_path / "b.tif"
+    _mini_raster(r1)
+    _mini_raster(r2)
+    out = tmp_path / "cmp.png"
+    m.fig_comparaison_cartes([str(r1), str(r2)], ["Avec", "Sans"], str(out), vmin=0, vmax=1)
+    assert _existe_non_vide(out)
+
+
 def test_fig_localisation(tmp_path):
     import geopandas as gpd
     from shapely.geometry import box

@@ -1,0 +1,93 @@
+# config_sans_elevation.yaml — VARIANTE d'exploration (branche explore/elevation-habitat).
+# Identique à config.yaml, sauf : élévation retirée du modèle + sortie dédiée.
+# Objectif : potentiel de présence basé majoritairement sur l'habitat (biais spatial de
+# l'élévation, cf. diagnostic J5). Lancer : 03_model.py puis 04_predict.py --config ce fichier.
+
+espece:
+  nom_latin: "Antrostomus vociferus"
+  nom_commun: "Engoulevent bois-pourri"
+  code_ebird: "eawpwi"            # code espèce eBird — À CONFIRMER
+
+zone_etude:
+  gpkg: "data/zone_etude.gpkg"
+  crs: "EPSG:32198"
+  resolution_m: 5
+
+ebird:
+  mois_saison: [6, 7]            # juin–juillet (pic d'activité vocale)
+  annee_min: 2010                # plancher : covariables = instantané contemporain (null = aucun)
+  duree_max_min: 300
+  distance_max_km: 5
+  observateurs_max: 10
+  protocoles: ["Stationary", "Traveling"]
+  listes_completes: true
+  buffer_m: 30                   # extraction des covariables autour du point GPS
+  fuseau: "America/Toronto"      # fuseau local (DST) pour minutes_apres_coucher
+  zerofill_csv: "data/processed/ebird/zerofill_engoulevent_bois_pourri.csv"  # zero-fill auk (entrée J4)
+
+climat_stac:
+  collection: "landsat-c2-l2"
+  fournisseur: "planetary-computer"
+  mois: [6, 7]
+  annees: null                   # null = déduites de l'EBD filtré (min/max)
+  couverture_nuageuse_max: 60    # filtre eo:cloud_cover (%)
+  reducteur: "median"            # median | mean
+  resolution_native_m: 30        # résolution native Landsat (m)
+  tuile_px: 1024                 # taille de tuile (px) pour checkpoint/reprise
+  combler_trous: true            # comble les trous du produit ST (USGS fill) par interpolation
+  comblement_max_px: 100         # distance de recherche max (px natifs 30 m) pour le comblement
+
+lidar:
+  twi_breach_dist_px: 100        # distance max de percement des dépressions (cellules) pour le TWI
+
+focal:                           # fenêtres des statistiques focales (m)
+  lisiere_m: 1000                # var 3, densité de lisière forêt-ouvert
+  feuillu_m: 500                 # var 4, proportion feuillu/mélangé
+  routes_m: 1000                 # var 5, densité de routes
+
+modele:
+  random_state: 42
+  bloc_cv_km: 10                 # blocs spatiaux (km) pour la CV spatiale
+  n_folds: 5
+  n_iter_recherche: 20           # itérations RandomizedSearchCV
+  cv_stratifie: true             # true = StratifiedGroupKFold (déséquilibre) ; false = GroupKFold
+  shap_echantillon: 2000         # taille d'échantillon pour les valeurs SHAP (0 = toutes les checklists)
+  diagnostic_spatial: true       # ajoute x,y en diagnostic → teste si l'élévation est un proxy spatial
+
+sources:                         # entrées vectorielles (voir README → sources)
+  ecoforestiere: "data/processed/ebird/peuplement_ecoforestier.gpkg"
+  ecoforestiere_couche: "pee"
+  routes: "data/raw/Routes_AQreseauPlus_ESRI(SHP)/Reseau_routier.shp"
+  milieux_humides: "data/raw/mh_potentiel_2023.gpkg"
+  milieux_humides_couche: "mh_potentiel_qc"
+
+chemins:
+  raw: "data/raw"
+  interim: "data/interim"
+  processed: "data/processed"
+  outputs: "outputs/exploration_sans_elevation"   # sortie dédiée : n'écrase pas la production
+
+calcul:                          # parallélisation (voir CLAUDE.md §3.7)
+  n_workers: null                # null = auto (tous les cœurs) ; sinon un entier
+  threads_per_worker: 2
+  memory_limit: "auto"           # p. ex. "8GB" par worker si spill nécessaire
+  dashboard: true                # tableau de bord Dask sur http://localhost:8787
+  processes: true                # true = workers en processus (isolation) ; false = threads
+
+variables:                       # interrupteurs des variantes v2 (voir CLAUDE.md §3.5)
+  routes_par_type: false         # densités séparées par ClsRte
+  milieux_humides_par_type: false  # distances par CLASSE/TYPE
+  exclure: ["elevation"]         # ← variante : élévation retirée (potentiel basé sur l'habitat)
+
+figures:                         # rendu des cartes (05_figures.py)
+  # ClsRte (AQréseau+) tracées sur les cartes : grandes voies seulement (lisibilité).
+  routes_classes_principales:
+    - "Autoroute"
+    - "Nationale"
+    - "Régionale"
+    - "Artère"
+    - "Collectrice municipale"
+    - "Collectrice de transit"
+  # Fenêtre de détection (min après le coucher du soleil), crépuscule → nuit : ~90 % des
+  # détections d'engoulevent y tombent. Sert à cartographier l'effort eBird pertinent.
+  fenetre_detection_apres_coucher_min: [-60, 450]

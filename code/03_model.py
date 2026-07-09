@@ -126,11 +126,13 @@ def importance_permutation(model, X: np.ndarray, y: np.ndarray, cfg: Config,
     return sorted(imp, key=lambda d: d["importance"], reverse=True)
 
 
-def pdp_habitat(model, X: np.ndarray, features: list[str]) -> dict:
+def pdp_habitat(model, X: np.ndarray, features: list[str],
+                features_habitat: list[str] | None = None) -> dict:
     """Dépendance partielle (grille + valeurs) des variables d'habitat de `features` (figures J7)."""
     from sklearn.inspection import partial_dependence
+    features_habitat = features_habitat or FEATURES_HABITAT
     out = {}
-    for nom in FEATURES_HABITAT:
+    for nom in features_habitat:
         if nom not in features:
             continue
         j = features.index(nom)
@@ -164,13 +166,15 @@ def valeurs_shap(model, X: np.ndarray) -> tuple[np.ndarray, float]:
     return vals, float(base.mean())
 
 
-def shap_habitat(model, X: np.ndarray, y: np.ndarray, cfg: Config) -> dict:
+def shap_habitat(model, X: np.ndarray, y: np.ndarray, cfg: Config,
+                 features_habitat: list[str] | None = None) -> dict:
     """Valeurs SHAP (classe présence) du modèle habitat sur un échantillon + importance |SHAP| moyenne."""
+    features_habitat = features_habitat or FEATURES_HABITAT
     idx = echantillon_shap(y, cfg.modele.shap_echantillon, cfg.modele.random_state)
     vals, base = valeurs_shap(model, X[idx])
     imp = sorted(
         [dict(variable=f, importance_shap=round(float(np.abs(vals[:, j]).mean()), 5))
-         for j, f in enumerate(FEATURES_HABITAT)],
+         for j, f in enumerate(features_habitat)],
         key=lambda d: d["importance_shap"], reverse=True)
     return dict(values=vals, data=X[idx], presence=y[idx], base_value=base,
                 mean_abs=imp, n_echantillon=int(len(idx)))
@@ -186,8 +190,9 @@ def _r2_lineaire(cible: np.ndarray, *regresseurs: np.ndarray) -> float:
 
 
 def diagnostic_elevation(X: np.ndarray, y: np.ndarray, groups: np.ndarray, df: pl.DataFrame,
-                         cv, cfg: Config, best_params: dict,
-                         importance_habitat: list[dict]) -> dict:
+                         cv, cfg: Config, best_params: dict, importance_habitat: list[dict],
+                         features: list[str] | None = None,
+                         features_habitat: list[str] | None = None) -> dict:
     """Teste si l'élévation agit comme proxy spatial.
 
     (1) structure spatiale de l'élévation (R² élévation~x,y ; corrélations) ;
@@ -195,14 +200,16 @@ def diagnostic_elevation(X: np.ndarray, y: np.ndarray, groups: np.ndarray, df: p
     l'importance/rang de l'élévation et sur l'AUC spatiale. Une chute marquée de
     l'importance de l'élévation quand x,y sont présents signale un proxy spatial.
     """
+    features = features or FEATURES
+    features_habitat = features_habitat or FEATURES_HABITAT
     x, yc = df["x"].to_numpy(), df["y"].to_numpy()
-    elev = X[:, FEATURES.index("elevation")]
+    elev = X[:, features.index("elevation")]
     rang_sans = {d["variable"]: i + 1 for i, d in enumerate(importance_habitat)}
     imp_sans = {d["variable"]: d["importance"] for d in importance_habitat}
 
-    xh = X[:, [FEATURES.index(f) for f in FEATURES_HABITAT]]
+    xh = X[:, [features.index(f) for f in features_habitat]]
     xhxy = np.column_stack([xh, x, yc])
-    feats_xy = FEATURES_HABITAT + ["x", "y"]
+    feats_xy = features_habitat + ["x", "y"]
     mod_xy = _rf(cfg, n_jobs=-1, **best_params).fit(xhxy, y)
     imp_xy = importance_permutation(mod_xy, xhxy, y, cfg, feats_xy)
     rang_avec = {d["variable"]: i + 1 for i, d in enumerate(imp_xy)}
@@ -224,30 +231,47 @@ def diagnostic_elevation(X: np.ndarray, y: np.ndarray, groups: np.ndarray, df: p
 
 # ── Orchestration ────────────────────────────────────────────────────────────
 
-def charger_donnees(cfg: Config) -> tuple[np.ndarray, np.ndarray, np.ndarray, pl.DataFrame]:
+def features_effectifs(cfg: Config) -> tuple[list[str], list[str]]:
+    """(features, features_habitat) après exclusion éventuelle (cfg.variables.exclure).
+
+    Permet d'explorer des jeux de variables réduits (p. ex. retirer l'élévation) via config,
+    sans toucher au code. `exclure=[]` (défaut) → listes complètes, comportement inchangé.
+    """
+    exclure = set(cfg.variables.exclure)
+    fh = [f for f in FEATURES_HABITAT if f not in exclure]
+    return fh + FEATURES_DETECTION, fh
+
+
+def charger_donnees(cfg: Config, features: list[str] | None = None
+                    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, pl.DataFrame]:
     """Charge la table modèle → (X, y, groups blocs, df). Vérifie l'absence de NaN."""
+    features = features or FEATURES
     chemin = Path(cfg.chemins.processed) / "table_modele.parquet"
     if not chemin.exists():
         raise FileNotFoundError(f"Table modèle introuvable ({chemin}) — exécuter 02_ebird.py (J4).")
     df = pl.read_parquet(chemin)
-    X = df.select(FEATURES).to_numpy()
+    X = df.select(features).to_numpy()
     y = df[CIBLE].to_numpy().astype(int)
     if not np.isfinite(X).all():
         raise ValueError("X contient des valeurs non finies (le RF n'accepte pas les NaN).")
     groups = assigner_blocs(df["x"].to_numpy(), df["y"].to_numpy(), cfg.modele.bloc_cv_km * 1000)
     log.info("  %d checklists · %d présences · %d variables · %d blocs de %g km",
-             len(y), int(y.sum()), len(FEATURES), len(np.unique(groups)), cfg.modele.bloc_cv_km)
+             len(y), int(y.sum()), len(features), len(np.unique(groups)), cfg.modele.bloc_cv_km)
     return X, y, groups, df
 
 
 def entrainer(nom: str, features: list[str], X_full: np.ndarray, y: np.ndarray,
-              groups: np.ndarray, cv, cfg: Config, avec_pdp: bool) -> tuple[dict, object, dict]:
+              groups: np.ndarray, cv, cfg: Config, avec_pdp: bool,
+              features_full: list[str] | None = None,
+              features_habitat: list[str] | None = None) -> tuple[dict, object, dict]:
     """Tuning + CV spatiale + fit final + importance (+ PDP) pour un jeu de variables.
 
-    Retourne (métriques+importance, modèle ajusté, PDP habitat). `X_full` est en ordre `FEATURES` ;
-    on en extrait les colonnes de `features`.
+    Retourne (métriques+importance, modèle ajusté, PDP habitat). `X_full` est en ordre
+    `features_full` (défaut `FEATURES`) ; on en extrait les colonnes de `features`.
     """
-    X = X_full[:, [FEATURES.index(f) for f in features]]
+    features_full = features_full or FEATURES
+    features_habitat = features_habitat or FEATURES_HABITAT
+    X = X_full[:, [features_full.index(f) for f in features]]
     with utils.log_step(f"[{nom}] Recherche d'hyperparamètres (RandomizedSearchCV)", log):
         best_params, best_score = chercher_hyperparams(X, y, groups, cv, cfg)
         log.info("  [%s] meilleurs params : %s (AUC CV=%.3f)", nom, best_params, best_score)
@@ -263,7 +287,7 @@ def entrainer(nom: str, features: list[str], X_full: np.ndarray, y: np.ndarray,
     pdp = {}
     if avec_pdp:
         with utils.log_step(f"[{nom}] Dépendance partielle (variables d'habitat)", log):
-            pdp = pdp_habitat(modele, X, features)
+            pdp = pdp_habitat(modele, X, features, features_habitat)
     resume = dict(features=features, best_params=best_params, best_score_cv=round(best_score, 4),
                   **metriques, importance=importance)
     return resume, modele, pdp
@@ -282,18 +306,27 @@ def main() -> None:
     utils.setup_logging("03_model", log_dir=f"{cfg.chemins.outputs}/logs")
     rapport: dict = {}
 
+    features, features_habitat = features_effectifs(cfg)
+    if cfg.variables.exclure:
+        log.info("  variables exclues (config) : %s → %d var (%d habitat + %d détection)",
+                 cfg.variables.exclure, len(features), len(features_habitat), len(FEATURES_DETECTION))
+    rapport["variables_exclues"] = list(cfg.variables.exclure)
+
     with utils.log_step("Chargement de la table modèle", log):
-        X, y, groups, df = charger_donnees(cfg)
+        X, y, groups, df = charger_donnees(cfg, features)
         rapport.update(n_checklists=len(y), n_presences=int(y.sum()), n_absences=int((y == 0).sum()),
                        n_blocs=int(len(np.unique(groups))), cv_stratifie=cfg.modele.cv_stratifie,
                        bloc_cv_km=cfg.modele.bloc_cv_km)
     cv = make_cv(cfg)
 
-    # Modèle de PRÉDICTION (14 var, approche Johnston : carte J6 à détectabilité standardisée).
-    combine, modele_combine, _ = entrainer("combiné", FEATURES, X, y, groups, cv, cfg, avec_pdp=False)
-    # Modèle d'INTERPRÉTATION habitat (10 var) : importance + PDP propres des hypothèses H1–H4.
-    habitat, modele_habitat, pdp = entrainer("habitat", FEATURES_HABITAT, X, y, groups, cv, cfg,
-                                             avec_pdp=True)
+    # Modèle de PRÉDICTION (habitat + détection, approche Johnston : carte J6 à détectabilité fixée).
+    combine, modele_combine, _ = entrainer("combiné", features, X, y, groups, cv, cfg,
+                                           avec_pdp=False, features_full=features,
+                                           features_habitat=features_habitat)
+    # Modèle d'INTERPRÉTATION habitat : importance + PDP propres des hypothèses H1–H4.
+    habitat, modele_habitat, pdp = entrainer("habitat", features_habitat, X, y, groups, cv, cfg,
+                                             avec_pdp=True, features_full=features,
+                                             features_habitat=features_habitat)
     rapport["modele_combine"] = combine
     rapport["modele_habitat"] = habitat
     det_std = detection_standard(df)
@@ -303,12 +336,12 @@ def main() -> None:
     models_dir.mkdir(parents=True, exist_ok=True)
 
     # Interprétation SHAP du modèle habitat (valeurs de Shapley, classe présence).
-    x_hab = X[:, [FEATURES.index(f) for f in FEATURES_HABITAT]]
+    x_hab = X[:, [features.index(f) for f in features_habitat]]
     with utils.log_step("Valeurs SHAP (modèle habitat)", log):
-        sh = shap_habitat(modele_habitat, x_hab, y, cfg)
+        sh = shap_habitat(modele_habitat, x_hab, y, cfg, features_habitat)
         np.savez_compressed(models_dir / "shap_habitat.npz", values=sh["values"], data=sh["data"],
                             presence=sh["presence"], base_value=sh["base_value"],
-                            features=np.array(FEATURES_HABITAT))
+                            features=np.array(features_habitat))
         rapport["shap_habitat"] = dict(mean_abs=sh["mean_abs"], n_echantillon=sh["n_echantillon"],
                                        base_value=round(sh["base_value"], 5),
                                        npz=str(models_dir / "shap_habitat.npz"))
@@ -316,10 +349,10 @@ def main() -> None:
             f"{d['variable']}={d['importance_shap']:.3f}" for d in sh["mean_abs"][:3]))
 
     # Diagnostic : l'élévation est-elle un proxy spatial ? (ajout des coordonnées x,y)
-    if cfg.modele.diagnostic_spatial:
+    if cfg.modele.diagnostic_spatial and "elevation" in features_habitat:
         with utils.log_step("Diagnostic spatial de l'élévation (ajout x,y)", log):
             diag = diagnostic_elevation(X, y, groups, df, cv, cfg, habitat["best_params"],
-                                        habitat["importance"])
+                                        habitat["importance"], features, features_habitat)
             rapport["diagnostic_elevation"] = diag
             log.info("  élévation : imp %.3f (rang %d) → %.3f (rang %d) avec x,y ; "
                      "R²(élév~x,y)=%.2f ; AUC habitat %.3f → %.3f (+x,y)",
@@ -331,12 +364,12 @@ def main() -> None:
 
     with utils.log_step("Export des modèles et des PDP", log):
         # rf.joblib = modèle de prédiction (J6) ; détection à fixer à `detection_standard`.
-        joblib.dump(dict(modele=modele_combine, features=FEATURES,
-                         features_habitat=FEATURES_HABITAT, features_detection=FEATURES_DETECTION,
+        joblib.dump(dict(modele=modele_combine, features=features,
+                         features_habitat=features_habitat, features_detection=FEATURES_DETECTION,
                          best_params=combine["best_params"], detection_standard=det_std,
                          seuil_tss_median=float(np.median(combine["seuils"]))),
                     models_dir / "rf.joblib")
-        joblib.dump(dict(modele=modele_habitat, features=FEATURES_HABITAT,
+        joblib.dump(dict(modele=modele_habitat, features=features_habitat,
                          best_params=habitat["best_params"],
                          seuil_tss_median=float(np.median(habitat["seuils"]))),
                     models_dir / "rf_habitat.joblib")

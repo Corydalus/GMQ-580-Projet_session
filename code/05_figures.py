@@ -116,6 +116,35 @@ def fig_carte(raster_path: str, titre: str, label: str, sortie: str, cmap: str =
     return sortie
 
 
+def fig_comparaison_cartes(rasters: list[str], titres: list[str], sortie: str, cmap: str = "magma",
+                           vmin=0, vmax=1, label: str = "probabilité", zone=None, routes=None,
+                           fidele=False) -> str:
+    """Plusieurs rasters côte à côte, même échelle + colorbar partagée (comparaison de scénarios)."""
+    import matplotlib.patheffects as pe
+    n = len(rasters)
+    fig, axes = plt.subplots(1, n, figsize=(7 * n, 7.5), squeeze=False)
+    axes = axes.ravel()
+    halo = [pe.withStroke(linewidth=2.2, foreground="white")]
+    im = None
+    for ax, rp, tt in zip(axes, rasters, titres):
+        arr, extent, _ = _lire_decime(rp, fidele=fidele)
+        im = ax.imshow(arr, extent=extent, origin="upper", cmap=cmap, vmin=vmin, vmax=vmax,
+                       interpolation="nearest", zorder=1)
+        if routes is not None and len(routes):
+            routes.plot(ax=ax, color="black", linewidth=0.6, alpha=0.9, zorder=2, path_effects=halo)
+        if zone is not None:
+            zone.boundary.plot(ax=ax, edgecolor="black", linewidth=1.6, zorder=3, path_effects=halo)
+        ax.set_xlim(extent[0], extent[1])
+        ax.set_ylim(extent[2], extent[3])
+        ax.set_title(tt, fontsize=11)
+        ax.set_xlabel("X (m, EPSG:32198)")
+    axes[0].set_ylabel("Y (m)")
+    fig.colorbar(im, ax=axes.tolist(), shrink=0.7, label=label)
+    fig.savefig(sortie, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    return sortie
+
+
 def fig_localisation(zone, sortie: str, marge: float = 0.15, fond=True) -> str:
     """Carte de localisation : emprise de la zone d'étude sur fond OSM (sans hotspots)."""
     from matplotlib.lines import Line2D
@@ -381,8 +410,10 @@ def main() -> None:
     if shap_npz.exists():
         with utils.log_step("Figures SHAP (beeswarm + dépendance élévation)", log):
             produits["shap"] = fig_shap(str(shap_npz), str(fig_dir / "shap_habitat.png"))
-            produits["shap_elevation"] = fig_shap_elevation(
-                str(shap_npz), str(fig_dir / "shap_elevation.png"))
+            feats_npz = np.load(shap_npz, allow_pickle=True)["features"].tolist()
+            if "elevation" in feats_npz:  # variante sans élévation → pas de dépendance
+                produits["shap_elevation"] = fig_shap_elevation(
+                    str(shap_npz), str(fig_dir / "shap_elevation.png"))
     else:
         log.warning("shap_habitat.npz absent — figures SHAP ignorées (relancer 03_model.py)")
 

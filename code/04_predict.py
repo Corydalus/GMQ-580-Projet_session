@@ -64,12 +64,17 @@ def _vecteur_detection(det_std: dict) -> np.ndarray:
 
 
 def predire_stack(cfg: Config, stack_path: str, rf, det_std: dict, ref_habitat: list,
-                  sorties: dict, rapport: dict) -> None:
-    """Prédit proba + incertitude + MESS sur tout le stack (fenêtré) → 3 COG."""
+                  sorties: dict, rapport: dict, features_habitat: list[str] | None = None) -> None:
+    """Prédit proba + incertitude + MESS sur tout le stack (fenêtré) → 3 COG.
+
+    `features_habitat` (défaut = 10 bandes) sélectionne, **par nom**, les bandes du stack
+    utilisées par le modèle — permet un modèle réduit (p. ex. sans élévation).
+    """
     import rasterio
     import rasterio.shutil
     from joblib import Parallel
 
+    features_habitat = features_habitat or FEATURES_HABITAT
     det_vec = _vecteur_detection(det_std)
     interim = Path(cfg.chemins.interim)
     tmp = {k: interim / f"_pred_{k}.tif" for k in sorties}
@@ -78,8 +83,10 @@ def predire_stack(cfg: Config, stack_path: str, rf, det_std: dict, ref_habitat: 
 
     with rasterio.open(stack_path) as src:
         noms = list(src.descriptions)
-        if noms != FEATURES_HABITAT:
-            raise ValueError(f"Ordre des bandes du stack {noms} ≠ {FEATURES_HABITAT}")
+        manquantes = [f for f in features_habitat if f not in noms]
+        if manquantes:
+            raise ValueError(f"Bandes absentes du stack {manquantes} (bandes : {noms})")
+        idx_bandes = [noms.index(f) for f in features_habitat]  # sélection + ordre du modèle
         profil = dict(driver="GTiff", width=src.width, height=src.height, count=1, dtype="float32",
                       crs=src.crs, transform=src.transform, nodata=float("nan"), tiled=True,
                       blockxsize=512, blockysize=512, compress="DEFLATE", BIGTIFF="YES")
@@ -88,13 +95,13 @@ def predire_stack(cfg: Config, stack_path: str, rf, det_std: dict, ref_habitat: 
             with Parallel(n_jobs=-1, prefer="threads") as parallel:
                 fenetres = list(utils.iter_windows(src.width, src.height, tuile))
                 for n, win in enumerate(fenetres, 1):
-                    bandes = src.read(window=win).astype("float32")          # (10, h, w)
+                    bandes = src.read(window=win).astype("float32")[idx_bandes]  # (k_habitat, h, w)
                     h, w = bandes.shape[1:]
                     valide = np.isfinite(bandes).all(axis=0)                  # nodata en union
                     proba = np.full((h, w), np.nan, "float32")
                     var = np.full((h, w), np.nan, "float32")
                     if valide.any():
-                        Xh = bandes[:, valide].T                             # (n_valide, 10)
+                        Xh = bandes[:, valide].T                             # (n_valide, k_habitat)
                         X = np.hstack([Xh, np.broadcast_to(det_vec, (Xh.shape[0], 4))])
                         p, v = predire_moyenne_variance(rf, X, parallel)
                         proba[valide] = p
@@ -123,10 +130,11 @@ def predire_stack(cfg: Config, stack_path: str, rf, det_std: dict, ref_habitat: 
 
 # ── Seuil à détection fixée ──────────────────────────────────────────────────
 
-def seuil_tss_detection_fixee(rf, df: pl.DataFrame, det_std: dict) -> tuple[float, float]:
+def seuil_tss_detection_fixee(rf, df: pl.DataFrame, det_std: dict,
+                              features_habitat: list[str] | None = None) -> tuple[float, float]:
     """TSS-optimal et son seuil sur les checklists, proba prédite à `detection_standard`."""
     from sklearn.metrics import roc_curve
-    Xh = df.select(FEATURES_HABITAT).to_numpy()
+    Xh = df.select(features_habitat or FEATURES_HABITAT).to_numpy()
     X = np.hstack([Xh, np.broadcast_to(_vecteur_detection(det_std), (Xh.shape[0], 4))])
     p = rf.predict_proba(X)[:, 1]
     fpr, tpr, seuils = roc_curve(df["presence"].to_numpy(), p)
@@ -198,11 +206,15 @@ def main() -> None:
 
     paquet = joblib.load(rf_path)
     rf, det_std = paquet["modele"], paquet["detection_standard"]
+    features_habitat = paquet.get("features_habitat", FEATURES_HABITAT)
+    if features_habitat != FEATURES_HABITAT:
+        log.info("  modèle réduit : %d variables d'habitat (%s)", len(features_habitat),
+                 ", ".join(features_habitat))
     df = pl.read_parquet(table_path)
-    ref_habitat = [df[c].to_numpy() for c in FEATURES_HABITAT]
+    ref_habitat = [df[c].to_numpy() for c in features_habitat]
 
     with utils.log_step("Seuil TSS à détection fixée", log):
-        tss, seuil = seuil_tss_detection_fixee(rf, df, det_std)
+        tss, seuil = seuil_tss_detection_fixee(rf, df, det_std, features_habitat)
         log.info("  TSS=%.3f · seuil=%.3f (détection = %s)", tss, seuil, det_std)
         rapport.update(tss_detection_fixee=round(tss, 4), seuil_detection_fixee=round(seuil, 4),
                        detection_standard=det_std)
@@ -210,7 +222,7 @@ def main() -> None:
     maps_dir = Path(cfg.chemins.outputs) / "maps"
     sorties = {k: str(maps_dir / f"{k}_5m.tif") for k in ("proba", "incertitude", "mess")}
     with utils.log_step("Prédiction fenêtrée (proba + incertitude + MESS)", log):
-        predire_stack(cfg, stack_path, rf, det_std, ref_habitat, sorties, rapport)
+        predire_stack(cfg, stack_path, rf, det_std, ref_habitat, sorties, rapport, features_habitat)
         log.info("  %d px valides · %.1f%% MESS négatif (extrapolation)",
                  rapport["n_pixels_valides"], rapport["pct_mess_negatif"])
     rapport["cartes"] = sorties
