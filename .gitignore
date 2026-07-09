@@ -23,16 +23,16 @@ data/processed/*
 # ════════════════════════════════════════════════════════════════════════════
 #  OUTPUTS lourds
 # ════════════════════════════════════════════════════════════════════════════
-outputs/maps/
-outputs/models/
-outputs/logs/
-# Sorties d'une variante d'exploration (config à chemins.outputs dédié) : tout est regénérable
-outputs/exploration_*/
-# Garder les figures légères et les tableaux CSV/parquet de résultats
+# Lourds : cartes / modèles / logs — y compris sous un dossier de sortie de MÉTHODE
+# (config à chemins.outputs dédié, p. ex. outputs/sans_elevation/). Tout est regénérable.
+outputs/**/maps/
+outputs/**/models/
+outputs/**/logs/
+# Garder les figures légères et les tableaux CSV/parquet de résultats (production + variantes)
 !outputs/figures/
 !outputs/tables/
 # ...SAUF les cartes de points eBird (espèce en péril + confidentialité) : jamais versionnées
-outputs/figures/prive/
+outputs/**/figures/prive/
 
 # ── Modèles sérialisés ──────────────────────────────────────────────────────
 *.joblib

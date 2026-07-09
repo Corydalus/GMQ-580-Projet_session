@@ -120,6 +120,12 @@ class ModeleCfg(_Base):
     diagnostic_spatial: bool = True  # ajoute x,y en diagnostic (test du proxy spatial de l'élévation)
 
 
+class HotspotsCfg(_Base):
+    n: int = Field(8, ge=1)  # nombre de hotspots à retenir
+    # cellules 1 km d'effort eBird ≤ ce quantile = « faible effort » ; ↑ élargit la fenêtre
+    effort_quantile: float = Field(0.35, ge=0, le=1)
+
+
 class CheminsCfg(_Base):
     raw: str = "data/raw"
     interim: str = "data/interim"
@@ -189,6 +195,7 @@ class Config(_Base):
     lidar: LidarCfg = LidarCfg()
     focal: FocalCfg = FocalCfg()
     modele: ModeleCfg
+    hotspots: HotspotsCfg = HotspotsCfg()
     chemins: CheminsCfg
     sources: SourcesCfg = SourcesCfg()
     calcul: CalculCfg = CalculCfg()

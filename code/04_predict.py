@@ -145,8 +145,12 @@ def seuil_tss_detection_fixee(rf, df: pl.DataFrame, det_std: dict,
 # ── Hotspots (haute proba × faible effort eBird) ─────────────────────────────
 
 def hotspots(cfg: Config, proba_path: str, df: pl.DataFrame, seuil: float,
-             n_hotspots: int = 5) -> tuple[object, dict]:
-    """Cellules 1 km à proba ≥ seuil et effort eBird faible → n meilleurs (GeoDataFrame, stats)."""
+             n_hotspots: int | None = None) -> tuple[object, dict]:
+    """Cellules 1 km à proba ≥ seuil et effort eBird faible → n meilleurs (GeoDataFrame, stats).
+
+    `n` et le quantile d'effort (« largeur » de la fenêtre) viennent de `cfg.hotspots`.
+    """
+    n_hotspots = n_hotspots if n_hotspots is not None else cfg.hotspots.n
     import geopandas as gpd
     import rasterio
     from rasterio.enums import Resampling
@@ -170,7 +174,7 @@ def hotspots(cfg: Config, proba_path: str, df: pl.DataFrame, seuil: float,
     np.add.at(effort, (r1[dedans], c1[dedans]), 1)
 
     valide = np.isfinite(proba1)
-    e_seuil = float(np.quantile(effort[valide], 0.25)) if valide.any() else 0.0
+    e_seuil = float(np.quantile(effort[valide], cfg.hotspots.effort_quantile)) if valide.any() else 0.0
     cand = valide & (proba1 >= seuil) & (effort <= e_seuil)
     rr, cc = np.where(cand)
     ordre = np.argsort(proba1[rr, cc])[::-1][:n_hotspots]
@@ -191,18 +195,32 @@ def hotspots(cfg: Config, proba_path: str, df: pl.DataFrame, seuil: float,
 # ── Orchestration ────────────────────────────────────────────────────────────
 
 def main() -> None:
+    import argparse
+    import json
+
     import joblib
+
+    ap = argparse.ArgumentParser(add_help=False)
+    ap.add_argument("--hotspots-only", action="store_true",
+                    help="recalcule seulement les hotspots depuis les cartes existantes")
+    args, _ = ap.parse_known_args()
 
     cfg = load_config_from_cli()
     utils.setup_logging("04_predict", log_dir=f"{cfg.chemins.outputs}/logs")
-    rapport: dict = {}
+    maps_dir = Path(cfg.chemins.outputs) / "maps"
+    sorties = {k: str(maps_dir / f"{k}_5m.tif") for k in ("proba", "incertitude", "mess")}
+    rapport_path = Path(cfg.chemins.outputs) / "logs" / "04_predict_rapport.json"
+    rapport: dict = (json.load(open(rapport_path, encoding="utf-8"))
+                     if args.hotspots_only and rapport_path.exists() else {})
 
     stack_path = f"{cfg.chemins.processed}/stack_5m.tif"
     rf_path = f"{cfg.chemins.outputs}/models/rf.joblib"
     table_path = f"{cfg.chemins.processed}/table_modele.parquet"
-    for p in (stack_path, rf_path, table_path):
+    requis = ([rf_path, table_path, sorties["proba"]] if args.hotspots_only
+              else [stack_path, rf_path, table_path])
+    for p in requis:
         if not Path(p).exists():
-            raise FileNotFoundError(f"Entrée manquante : {p} (exécuter J3/J4/J5).")
+            raise FileNotFoundError(f"Entrée manquante : {p} (exécuter J3/J4/J5 ou 04_predict complet).")
 
     paquet = joblib.load(rf_path)
     rf, det_std = paquet["modele"], paquet["detection_standard"]
@@ -219,13 +237,14 @@ def main() -> None:
         rapport.update(tss_detection_fixee=round(tss, 4), seuil_detection_fixee=round(seuil, 4),
                        detection_standard=det_std)
 
-    maps_dir = Path(cfg.chemins.outputs) / "maps"
-    sorties = {k: str(maps_dir / f"{k}_5m.tif") for k in ("proba", "incertitude", "mess")}
-    with utils.log_step("Prédiction fenêtrée (proba + incertitude + MESS)", log):
-        predire_stack(cfg, stack_path, rf, det_std, ref_habitat, sorties, rapport, features_habitat)
-        log.info("  %d px valides · %.1f%% MESS négatif (extrapolation)",
-                 rapport["n_pixels_valides"], rapport["pct_mess_negatif"])
-    rapport["cartes"] = sorties
+    if args.hotspots_only:
+        log.info("Mode --hotspots-only : prédiction fenêtrée sautée (cartes existantes réutilisées)")
+    else:
+        with utils.log_step("Prédiction fenêtrée (proba + incertitude + MESS)", log):
+            predire_stack(cfg, stack_path, rf, det_std, ref_habitat, sorties, rapport, features_habitat)
+            log.info("  %d px valides · %.1f%% MESS négatif (extrapolation)",
+                     rapport["n_pixels_valides"], rapport["pct_mess_negatif"])
+        rapport["cartes"] = sorties
 
     with utils.log_step("Hotspots (haute proba × faible effort)", log):
         gdf, stats = hotspots(cfg, sorties["proba"], df, seuil)

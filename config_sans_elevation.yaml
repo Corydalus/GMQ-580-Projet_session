@@ -61,11 +61,15 @@ sources:                         # entrées vectorielles (voir README → source
   milieux_humides: "data/raw/mh_potentiel_2023.gpkg"
   milieux_humides_couche: "mh_potentiel_qc"
 
+hotspots:                        # sélection des zones à prospecter (04_predict)
+  n: 8                            # nombre de hotspots retenus
+  effort_quantile: 0.35          # cellules 1 km d'effort eBird ≤ ce quantile ; ↑ = fenêtre plus large
+
 chemins:
   raw: "data/raw"
   interim: "data/interim"
   processed: "data/processed"
-  outputs: "outputs/exploration_sans_elevation"   # sortie dédiée : n'écrase pas la production
+  outputs: "outputs/sans_elevation"   # méthode « sans élévation » : sortie dédiée (livrable)
 
 calcul:                          # parallélisation (voir CLAUDE.md §3.7)
   n_workers: null                # null = auto (tous les cœurs) ; sinon un entier

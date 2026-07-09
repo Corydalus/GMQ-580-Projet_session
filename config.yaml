@@ -60,6 +60,10 @@ sources:                         # entrées vectorielles (voir README → source
   milieux_humides: "data/raw/mh_potentiel_2023.gpkg"
   milieux_humides_couche: "mh_potentiel_qc"
 
+hotspots:                        # sélection des zones à prospecter (04_predict)
+  n: 8                            # nombre de hotspots retenus
+  effort_quantile: 0.35          # cellules 1 km d'effort eBird ≤ ce quantile ; ↑ = fenêtre plus large
+
 chemins:
   raw: "data/raw"
   interim: "data/interim"
