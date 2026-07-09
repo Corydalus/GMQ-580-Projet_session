@@ -130,7 +130,9 @@ class CheminsCfg(_Base):
     raw: str = "data/raw"
     interim: str = "data/interim"
     processed: str = "data/processed"
-    outputs: str = "outputs"
+    outputs: str = "outputs"                  # racine des sorties de la MÉTHODE courante
+    commun: str = "outputs/commun"            # rendus partagés (localisation, QC LST, cartes eBird, data-prep)
+    comparaison: str = "outputs/comparaison"  # figures inter-méthodes (06/07)
 
 
 class SourcesCfg(_Base):

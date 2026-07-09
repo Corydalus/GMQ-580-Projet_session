@@ -19,5 +19,5 @@
   "seuil_proba": 0.6551,
   "effort_seuil": 0.0,
   "n_hotspots": 8,
-  "hotspots_gpkg": "outputs/tables/hotspots.gpkg"
+  "hotspots_gpkg": "outputs/avec_elevation/tables/hotspots.gpkg"
 }

@@ -148,7 +148,7 @@ def fig_comparaison(resultats: dict, sortie: str) -> str:
 
 def main() -> None:
     cfg = load_config_from_cli()
-    utils.setup_logging("06_exploration", log_dir=f"{cfg.chemins.outputs}/logs")
+    utils.setup_logging("06_exploration", log_dir=f"{cfg.chemins.comparaison}/logs")
     m = charger_module_modele()
 
     with utils.log_step("Chargement de la table modèle", log):
@@ -161,7 +161,7 @@ def main() -> None:
     for nom, (Xv, feats) in variantes_habitat(m, x_hab, xc, yc).items():
         resultats[nom] = evaluer_variante(m, nom, Xv, feats, y, groups, cv, cfg)
 
-    fig_dir = Path(cfg.chemins.outputs) / "figures"
+    fig_dir = Path(cfg.chemins.comparaison) / "figures"
     fig_dir.mkdir(parents=True, exist_ok=True)
     sortie = fig_comparaison(resultats, str(fig_dir / "exploration_elevation.png"))
     log.info("  figure → %s", sortie)
@@ -170,7 +170,7 @@ def main() -> None:
                                        "tss_moy", "tss_std", "importance", "shap_moy")}
                for nom, r in resultats.items()}
     rapport["figure"] = sortie
-    utils.ecrire_rapport_json("06_exploration", rapport, log_dir=f"{cfg.chemins.outputs}/logs")
+    utils.ecrire_rapport_json("06_exploration", rapport, log_dir=f"{cfg.chemins.comparaison}/logs")
 
 
 if __name__ == "__main__":

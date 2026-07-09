@@ -269,7 +269,7 @@ def sous_etape_5_stack(cfg: Config, rapport: dict) -> None:
 
 def main() -> None:
     cfg = load_config_from_cli()
-    utils.setup_logging("01_predictors", log_dir=f"{cfg.chemins.outputs}/logs")
+    utils.setup_logging("01_predictors", log_dir=f"{cfg.chemins.commun}/logs")
     rapport: dict = {}
     with utils.log_step("Sous-étape 1 — LiDAR (MHC, élévation)", log):
         sous_etape_1_lidar(cfg, rapport)
@@ -281,7 +281,7 @@ def main() -> None:
         sous_etape_4_routes_mh(cfg, rapport)
     with utils.log_step("Sous-étape 5 — Assemblage du stack", log):
         sous_etape_5_stack(cfg, rapport)
-    utils.ecrire_rapport_json("01_predictors", rapport, log_dir=f"{cfg.chemins.outputs}/logs")
+    utils.ecrire_rapport_json("01_predictors", rapport, log_dir=f"{cfg.chemins.commun}/logs")
 
 
 if __name__ == "__main__":

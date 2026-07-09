@@ -23,18 +23,16 @@ data/processed/*
 # ════════════════════════════════════════════════════════════════════════════
 #  OUTPUTS lourds
 # ════════════════════════════════════════════════════════════════════════════
-# Lourds : cartes / modèles — y compris sous un dossier de sortie de MÉTHODE
-# (config à chemins.outputs dédié, p. ex. outputs/sans_elevation/). Tout est regénérable.
+# Sorties organisées par nature : avec_elevation/ · sans_elevation/ · commun/ · comparaison/.
+# Lourds regénérables (cartes COG, modèles) — sous n'importe quel dossier de sortie :
 outputs/**/maps/
 outputs/**/models/
 # Logs : traces verbeuses ignorées, MAIS on garde les rapports de métriques (*_rapport.json)
 # — socle quantitatif reproductible du rapport (petits, sans données sensibles).
 outputs/**/logs/*.log
-# Garder les figures légères et les tableaux CSV/parquet de résultats (production + variantes)
-!outputs/figures/
-!outputs/tables/
-# ...SAUF les cartes de points eBird (espèce en péril + confidentialité) : jamais versionnées
+# Cartes de points eBird (espèce en péril + confidentialité) : jamais versionnées, où qu'elles soient.
 outputs/**/figures/prive/
+# Les figures (*.png) et tables (*.csv/*.gpkg) hors prive/ sont versionnées par défaut.
 
 # ── Modèles sérialisés ──────────────────────────────────────────────────────
 *.joblib

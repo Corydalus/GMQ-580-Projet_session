@@ -1,11 +1,11 @@
 {
   "script": "05_figures",
-  "horodatage": "2026-07-09T09:55:49",
+  "horodatage": "2026-07-09T10:20:50",
   "figures": {
-    "localisation": "outputs/sans_elevation/figures/localisation.png",
-    "observations": "outputs/sans_elevation/figures/prive/carte_observations.png",
-    "checklists": "outputs/sans_elevation/figures/prive/carte_checklists.png",
-    "checklists_detection": "outputs/sans_elevation/figures/prive/carte_checklists_detection.png",
+    "localisation": "outputs/commun/figures/localisation.png",
+    "observations": "outputs/commun/figures/prive/carte_observations.png",
+    "checklists": "outputs/commun/figures/prive/carte_checklists.png",
+    "checklists_detection": "outputs/commun/figures/prive/carte_checklists_detection.png",
     "carte_proba": "outputs/sans_elevation/figures/carte_proba.png",
     "carte_incertitude": "outputs/sans_elevation/figures/carte_incertitude.png",
     "carte_mess": "outputs/sans_elevation/figures/carte_mess.png",

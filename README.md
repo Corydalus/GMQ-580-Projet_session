@@ -159,26 +159,45 @@ Les données brutes ne sont pas incluses : se référer au tableau **Données** 
 ## Utilisation
 Exécuter les scripts dans l'ordre depuis la racine du projet :
 ```bash
+# Prédicteurs & données modèle (partagés par les deux méthodes)
 uv run python code/01_predictors.py   # → data/processed/stack_5m.tif
 uv run python code/02_ebird.py        # → data/processed/table_modele.parquet
-uv run python code/03_model.py        # → outputs/models/rf.joblib + métriques CV
-uv run python code/04_predict.py      # → outputs/maps/*.tif + hotspots.gpkg
-uv run python code/05_figures.py      # → outputs/figures/*.png
+
+# Méthode « avec élévation » (config.yaml par défaut)
+uv run python code/03_model.py        # → outputs/avec_elevation/models/ + métriques
+uv run python code/04_predict.py      # → outputs/avec_elevation/maps/ + tables/hotspots
+uv run python code/05_figures.py      # → outputs/avec_elevation/figures/ (+ commun/)
+
+# Méthode « sans élévation » (habitat) : même pipeline, autre config
+uv run python code/03_model.py   --config config_sans_elevation.yaml
+uv run python code/04_predict.py --config config_sans_elevation.yaml
+uv run python code/05_figures.py --config config_sans_elevation.yaml
+
+# Comparaison des deux méthodes → outputs/comparaison/
+uv run python code/06_exploration_elevation.py
+uv run python code/07_comparaison_elevation.py
 ```
+> Une **analyse = un fichier de config**. `config_sans_elevation.yaml` ne diffère de
+> `config.yaml` que par `variables.exclure: ["elevation"]` et `chemins.outputs`.
 
 ## Structure du dépôt
 ```
 GMQ-580-Projet_session/
 ├── README.md
 ├── pyproject.toml · uv.lock · .gitignore
-├── code/                 # 01 → 05 + utils.py
+├── code/                 # 01 → 07 + utils.py
+├── config.yaml · config_sans_elevation.yaml   # une analyse = un fichier
 ├── notebooks/            # exploration
 ├── scripts_independants/ # téléchargement des données
 ├── data/                 # NON versionné (sauf zone_etude.gpkg et résultats parquet/json)
 │   ├── raw/ · interim/ · processed/
 │   ├── mhc/ · mnt/ · pente/ · climat/ · ebird/   # données brutes locales
 │   └── zone_etude.gpkg
-└── outputs/              # figures/ · tables/ (versionnés) · maps/ · models/ (ignorés)
+└── outputs/              # sorties organisées PAR NATURE
+    ├── avec_elevation/   # méthode 1 : figures·tables (versionnés) · maps·models·logs (ignorés)
+    ├── sans_elevation/   # méthode 2 : idem
+    ├── commun/           # partagé : localisation, QC LST, cartes eBird (privées), rapports data-prep
+    └── comparaison/      # figures inter-méthodes (avec vs sans élévation)
 ```
 > Les documents de travail (`CLAUDE.md`, `methodologie_pour_README.md`,
 > `rapport/`, `Recherche documentaire/`) sont conservés **en local** mais exclus

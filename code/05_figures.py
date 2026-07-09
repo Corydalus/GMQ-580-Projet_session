@@ -325,8 +325,10 @@ def main() -> None:
     cfg = load_config_from_cli()
     utils.setup_logging("05_figures", log_dir=f"{cfg.chemins.outputs}/logs")
     out = cfg.chemins.outputs
-    fig_dir = Path(out) / "figures"
+    fig_dir = Path(out) / "figures"           # figures PROPRES à la méthode
     fig_dir.mkdir(parents=True, exist_ok=True)
+    commun_fig = Path(cfg.chemins.commun) / "figures"   # rendus PARTAGÉS (localisation, eBird)
+    commun_fig.mkdir(parents=True, exist_ok=True)
     maps = Path(out) / "maps"
     rapport_model = json.load(open(f"{out}/logs/03_model_rapport.json", encoding="utf-8"))
     pdp = json.load(open(f"{out}/models/pdp_habitat_rapport.json", encoding="utf-8"))
@@ -341,15 +343,15 @@ def main() -> None:
     hotspots = gpd.read_file(hs_path) if hs_path.exists() else None
     produits: dict = {}
 
-    with utils.log_step("Carte de localisation (fond OSM, sans hotspots)", log):
-        produits["localisation"] = fig_localisation(zone, str(fig_dir / "localisation.png"))
+    with utils.log_step("Carte de localisation (fond OSM, sans hotspots) [commun]", log):
+        produits["localisation"] = fig_localisation(zone, str(commun_fig / "localisation.png"))
 
-    # Cartes de distribution eBird — DONNÉES SENSIBLES (espèce en péril + confidentialité eBird).
-    # Écrites dans outputs/figures/prive/ (ignoré par Git) : jamais versionnées ni publiées.
+    # Cartes de distribution eBird — PARTAGÉES + DONNÉES SENSIBLES (espèce en péril, confidentialité).
+    # Écrites dans commun/figures/prive/ (ignoré par Git) : jamais versionnées ni publiées.
     table = Path(cfg.chemins.processed) / "table_modele.parquet"
     if table.exists():
         import polars as pl
-        prive = fig_dir / "prive"
+        prive = commun_fig / "prive"
         prive.mkdir(exist_ok=True)
         df = pl.read_parquet(table, columns=["x", "y", "presence", "minutes_apres_coucher"])
         pres = df.filter(pl.col("presence") == 1)

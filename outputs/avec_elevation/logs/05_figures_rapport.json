@@ -1,0 +1,19 @@
+{
+  "script": "05_figures",
+  "horodatage": "2026-07-09T10:20:37",
+  "figures": {
+    "localisation": "outputs/commun/figures/localisation.png",
+    "observations": "outputs/commun/figures/prive/carte_observations.png",
+    "checklists": "outputs/commun/figures/prive/carte_checklists.png",
+    "checklists_detection": "outputs/commun/figures/prive/carte_checklists_detection.png",
+    "carte_proba": "outputs/avec_elevation/figures/carte_proba.png",
+    "carte_incertitude": "outputs/avec_elevation/figures/carte_incertitude.png",
+    "carte_mess": "outputs/avec_elevation/figures/carte_mess.png",
+    "importance": "outputs/avec_elevation/figures/importance_habitat.png",
+    "pdp": "outputs/avec_elevation/figures/pdp_habitat.png",
+    "metriques_cv": "outputs/avec_elevation/figures/metriques_cv.png",
+    "shap": "outputs/avec_elevation/figures/shap_habitat.png",
+    "shap_elevation": "outputs/avec_elevation/figures/shap_elevation.png",
+    "diagnostic_elevation": "outputs/avec_elevation/figures/diagnostic_elevation.png"
+  }
+}

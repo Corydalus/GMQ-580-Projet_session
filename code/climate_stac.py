@@ -292,7 +292,7 @@ def construire_composite_lst(cfg, sortie: str | Path | None = None,
         lst_c_max=round(float(np.nanmax(vals)), 2) if finite.any() else None,
         n_clair_median=int(np.nanmedian(n_clair30)),
     )
-    utils.ecrire_rapport_json("02_climate_stac", rapport, log_dir=f"{cfg.chemins.outputs}/logs")
+    utils.ecrire_rapport_json("02_climate_stac", rapport, log_dir=f"{cfg.chemins.commun}/logs")
     log.info("Composite LST écrit : %s (%.1f%% manquant, %d/%d tuiles reprises)",
              sortie, rapport["pct_manquant"], n_reprise, len(taches))
     return sortie
@@ -301,7 +301,7 @@ def construire_composite_lst(cfg, sortie: str | Path | None = None,
 def main() -> None:
     from config import load_config_from_cli
     cfg = load_config_from_cli()
-    utils.setup_logging("02_climate_stac", log_dir=f"{cfg.chemins.outputs}/logs")
+    utils.setup_logging("02_climate_stac", log_dir=f"{cfg.chemins.commun}/logs")
     construire_composite_lst(cfg)
 
 

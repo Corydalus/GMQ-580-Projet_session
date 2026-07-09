@@ -41,7 +41,7 @@ def main() -> None:
 
     base = load_config(args.config)
     var = load_config(args.config_variante)
-    utils.setup_logging("07_comparaison", log_dir=f"{base.chemins.outputs}/logs")
+    utils.setup_logging("07_comparaison", log_dir=f"{base.chemins.comparaison}/logs")
     fig = _module_figures()
 
     zone = gpd.read_file(base.zone_etude.gpkg).to_crs(base.zone_etude.crs)
@@ -56,7 +56,7 @@ def main() -> None:
         if not Path(p).exists():
             raise FileNotFoundError(f"Carte manquante : {p} (lancer 04_predict avec la config voulue).")
 
-    fig_dir = Path(base.chemins.outputs) / "figures"
+    fig_dir = Path(base.chemins.comparaison) / "figures"
     fig_dir.mkdir(parents=True, exist_ok=True)
     sortie = str(fig_dir / "comparaison_elevation_proba.png")
     with utils.log_step("Comparaison proba avec/sans élévation", log):

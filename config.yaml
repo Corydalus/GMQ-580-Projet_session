@@ -68,7 +68,9 @@ chemins:
   raw: "data/raw"
   interim: "data/interim"
   processed: "data/processed"
-  outputs: "outputs"
+  outputs: "outputs/avec_elevation"    # méthode « avec élévation » (production)
+  commun: "outputs/commun"             # rendus partagés (localisation, QC LST, cartes eBird, data-prep)
+  comparaison: "outputs/comparaison"   # figures inter-méthodes (06/07)
 
 calcul:                          # parallélisation (voir CLAUDE.md §3.7)
   n_workers: null                # null = auto (tous les cœurs) ; sinon un entier

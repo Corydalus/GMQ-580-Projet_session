@@ -280,7 +280,7 @@ def finaliser(df: pl.DataFrame, noms_cov: list[str], cfg: Config,
 
 def main() -> None:
     cfg = load_config_from_cli()
-    utils.setup_logging("02_ebird", log_dir=f"{cfg.chemins.outputs}/logs")
+    utils.setup_logging("02_ebird", log_dir=f"{cfg.chemins.commun}/logs")
     rapport: dict = {}
     stack_path = f"{cfg.chemins.processed}/stack_5m.tif"
     if not Path(stack_path).exists():
@@ -296,7 +296,7 @@ def main() -> None:
     with utils.log_step(f"Écriture {sortie}", log):
         df.write_parquet(sortie)
     rapport["sortie"] = str(sortie)
-    utils.ecrire_rapport_json("02_ebird", rapport, log_dir=f"{cfg.chemins.outputs}/logs")
+    utils.ecrire_rapport_json("02_ebird", rapport, log_dir=f"{cfg.chemins.commun}/logs")
 
 
 if __name__ == "__main__":
