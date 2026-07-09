@@ -82,7 +82,9 @@ flowchart TD
 | `02_ebird.py` | EBD filtré → zero-fill → variables de détection → extraction covariables | `table_modele.parquet` |
 | `03_model.py` | RF + tuning + validation spatiale + importance + PDP | `rf.joblib`, métriques CV |
 | `04_predict.py` | Carte proba (fenêtrée) + incertitude + MESS + hotspots | GeoTIFF COG + GeoPackage |
-| `05_figures.py` | Toutes les figures du rapport | PNG exports |
+| `05_figures.py` | Cartes, importance, PDP, SHAP, métriques CV, QC LST | PNG exports |
+| `06_` · `07_…elevation.py` | Exploration du rôle de l'élévation (retrait / résidualisation) + figures inter-méthodes | PNG + métriques |
+| `08_figures_rapport.py` | Figures de synthèse : performance des 4 configs, dominance de la détection, ROC par fold, entonnoir eBird, diagrammes de pipeline | PNG exports |
 
 ## Librairies principales (ou stack)
 Projet Python géré avec **`uv`** (`pyproject.toml` + `uv.lock` versionné pour la reproductibilité).
@@ -104,7 +106,7 @@ Projet Python géré avec **`uv`** (`pyproject.toml` + `uv.lock` versionné pour
 ## Livrables attendus
 | # | Livrable | Format |
 |---|----------|--------|
-| 1 | Rapport final (~15–20 pages) | Markdown + figures |
+| 1 | Rapport final (~15–20 pages) | Word (.docx) + figures |
 | 2 | Dépôt Git reproductible (`uv sync` + `01` → `05`) | GitHub public |
 | 3 | Carte de probabilité de présence à 5 m | GeoTIFF COG + PNG |
 | 4 | Carte d'incertitude (variance inter-arbres) | GeoTIFF COG + PNG |
@@ -122,6 +124,8 @@ Projet Python géré avec **`uv`** (`pyproject.toml` + `uv.lock` versionné pour
 | `03_model.py` — Random Forest + validation spatiale (AUC 0.86–0.98) | ✅ Complété |
 | `04_predict.py` — cartes proba / incertitude / MESS / hotspots | ✅ Complété |
 | `05_figures.py` — figures du rapport | ✅ Complété |
+| Exploration du rôle de l'élévation (2 méthodes : avec / sans) | ✅ Complété |
+| `08_figures_rapport.py` — figures de synthèse (performance, ROC, entonnoir, pipeline) | ✅ Complété |
 | Rapport final | ⏳ En cours |
 
 ## Décisions méthodologiques
@@ -176,6 +180,9 @@ uv run python code/05_figures.py --config config_sans_elevation.yaml
 # Comparaison des deux méthodes → outputs/comparaison/
 uv run python code/06_exploration_elevation.py
 uv run python code/07_comparaison_elevation.py
+
+# Figures de synthèse (rapport + présentation orale) → comparaison/ & commun/
+uv run python code/08_figures_rapport.py
 ```
 > Une **analyse = un fichier de config**. `config_sans_elevation.yaml` ne diffère de
 > `config.yaml` que par `variables.exclure: ["elevation"]` et `chemins.outputs`.
@@ -185,7 +192,7 @@ uv run python code/07_comparaison_elevation.py
 GMQ-580-Projet_session/
 ├── README.md
 ├── pyproject.toml · uv.lock · .gitignore
-├── code/                 # 01 → 07 + utils.py
+├── code/                 # 01 → 08 + utils.py
 ├── config.yaml · config_sans_elevation.yaml   # une analyse = un fichier
 ├── notebooks/            # exploration
 ├── scripts_independants/ # téléchargement des données
