@@ -1,0 +1,26 @@
+{
+  "script": "01_predictors",
+  "horodatage": "2026-07-07T22:22:48",
+  "mhc_5m": "data/interim/mhc_5m.tif",
+  "mnt_5m": "data/interim/mnt_5m.tif",
+  "twi_5m": "data/interim/twi_5m.tif",
+  "age_5m": "data/interim/age_5m.tif",
+  "densite_5m": "data/interim/densite_5m.tif",
+  "prop_feuillu_5m": "data/interim/prop_feuillu_5m.tif",
+  "lisiere_5m": "data/interim/lisiere_5m.tif",
+  "densite_routes_5m": "data/interim/densite_routes_5m.tif",
+  "distance_mh_5m": "data/interim/distance_mh_5m.tif",
+  "stack_5m": "data/processed/stack_5m.tif",
+  "bandes": [
+    "MHC_hauteur_canopee",
+    "TWI",
+    "densite_lisiere",
+    "prop_feuillu_melange",
+    "densite_routes",
+    "LST_estivale",
+    "classe_age",
+    "densite_peuplement",
+    "distance_milieu_humide",
+    "elevation"
+  ]
+}

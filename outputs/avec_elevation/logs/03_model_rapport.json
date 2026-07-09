@@ -1,0 +1,373 @@
+{
+  "script": "03_model",
+  "horodatage": "2026-07-08T21:23:35",
+  "n_checklists": 17440,
+  "n_presences": 148,
+  "n_absences": 17292,
+  "n_blocs": 104,
+  "cv_stratifie": true,
+  "bloc_cv_km": 10.0,
+  "modele_combine": {
+    "features": [
+      "MHC_hauteur_canopee",
+      "TWI",
+      "densite_lisiere",
+      "prop_feuillu_melange",
+      "densite_routes",
+      "LST_estivale",
+      "classe_age",
+      "densite_peuplement",
+      "distance_milieu_humide",
+      "elevation",
+      "minutes_apres_coucher",
+      "phase_lune",
+      "log_duree",
+      "jour_julien"
+    ],
+    "best_params": {
+      "max_depth": 40,
+      "max_features": 0.3,
+      "min_samples_leaf": 7,
+      "n_estimators": 320
+    },
+    "best_score_cv": 0.9776,
+    "auc_folds": [
+      0.975,
+      0.9777,
+      0.9736,
+      0.9946,
+      0.9672
+    ],
+    "auc_moy": 0.9776,
+    "auc_std": 0.0091,
+    "tss_folds": [
+      0.8366,
+      0.8579,
+      0.9188,
+      0.9751,
+      0.8288
+    ],
+    "tss_moy": 0.8835,
+    "tss_std": 0.0557,
+    "seuils": [
+      0.0645,
+      0.0869,
+      0.3207,
+      0.196,
+      0.0539
+    ],
+    "importance": [
+      {
+        "variable": "minutes_apres_coucher",
+        "importance": 0.06996,
+        "ecart_type": 0.00411
+      },
+      {
+        "variable": "elevation",
+        "importance": 0.00482,
+        "ecart_type": 0.00042
+      },
+      {
+        "variable": "densite_routes",
+        "importance": 0.00126,
+        "ecart_type": 0.00015
+      },
+      {
+        "variable": "prop_feuillu_melange",
+        "importance": 0.00124,
+        "ecart_type": 0.0001
+      },
+      {
+        "variable": "log_duree",
+        "importance": 0.00101,
+        "ecart_type": 0.00012
+      },
+      {
+        "variable": "LST_estivale",
+        "importance": 0.00058,
+        "ecart_type": 6e-05
+      },
+      {
+        "variable": "distance_milieu_humide",
+        "importance": 0.00054,
+        "ecart_type": 6e-05
+      },
+      {
+        "variable": "jour_julien",
+        "importance": 0.00039,
+        "ecart_type": 5e-05
+      },
+      {
+        "variable": "MHC_hauteur_canopee",
+        "importance": 0.00037,
+        "ecart_type": 9e-05
+      },
+      {
+        "variable": "densite_lisiere",
+        "importance": 0.00037,
+        "ecart_type": 5e-05
+      },
+      {
+        "variable": "TWI",
+        "importance": 0.0003,
+        "ecart_type": 4e-05
+      },
+      {
+        "variable": "classe_age",
+        "importance": 0.00025,
+        "ecart_type": 5e-05
+      },
+      {
+        "variable": "phase_lune",
+        "importance": 0.00022,
+        "ecart_type": 3e-05
+      },
+      {
+        "variable": "densite_peuplement",
+        "importance": 0.00016,
+        "ecart_type": 4e-05
+      }
+    ]
+  },
+  "modele_habitat": {
+    "features": [
+      "MHC_hauteur_canopee",
+      "TWI",
+      "densite_lisiere",
+      "prop_feuillu_melange",
+      "densite_routes",
+      "LST_estivale",
+      "classe_age",
+      "densite_peuplement",
+      "distance_milieu_humide",
+      "elevation"
+    ],
+    "best_params": {
+      "max_depth": 10,
+      "max_features": "sqrt",
+      "min_samples_leaf": 2,
+      "n_estimators": 639
+    },
+    "best_score_cv": 0.859,
+    "auc_folds": [
+      0.8847,
+      0.8015,
+      0.8678,
+      0.8907,
+      0.8501
+    ],
+    "auc_moy": 0.859,
+    "auc_std": 0.032,
+    "tss_folds": [
+      0.676,
+      0.6176,
+      0.6769,
+      0.7341,
+      0.6824
+    ],
+    "tss_moy": 0.6774,
+    "tss_std": 0.0369,
+    "seuils": [
+      0.0161,
+      0.1402,
+      0.2498,
+      0.1742,
+      0.0852
+    ],
+    "importance": [
+      {
+        "variable": "elevation",
+        "importance": 0.1145,
+        "ecart_type": 0.00718
+      },
+      {
+        "variable": "prop_feuillu_melange",
+        "importance": 0.01633,
+        "ecart_type": 0.00084
+      },
+      {
+        "variable": "densite_routes",
+        "importance": 0.01417,
+        "ecart_type": 0.00125
+      },
+      {
+        "variable": "LST_estivale",
+        "importance": 0.00914,
+        "ecart_type": 0.00053
+      },
+      {
+        "variable": "densite_lisiere",
+        "importance": 0.00873,
+        "ecart_type": 0.00068
+      },
+      {
+        "variable": "MHC_hauteur_canopee",
+        "importance": 0.00821,
+        "ecart_type": 0.00121
+      },
+      {
+        "variable": "distance_milieu_humide",
+        "importance": 0.00753,
+        "ecart_type": 0.00075
+      },
+      {
+        "variable": "TWI",
+        "importance": 0.00496,
+        "ecart_type": 0.00041
+      },
+      {
+        "variable": "classe_age",
+        "importance": 0.00492,
+        "ecart_type": 0.00037
+      },
+      {
+        "variable": "densite_peuplement",
+        "importance": 0.00408,
+        "ecart_type": 0.00043
+      }
+    ]
+  },
+  "detection_standard": {
+    "minutes_apres_coucher": 44.4329,
+    "phase_lune": 15.239,
+    "log_duree": 2.8315,
+    "jour_julien": 175.0
+  },
+  "shap_habitat": {
+    "mean_abs": [
+      {
+        "variable": "elevation",
+        "importance_shap": 0.19643
+      },
+      {
+        "variable": "prop_feuillu_melange",
+        "importance_shap": 0.07531
+      },
+      {
+        "variable": "densite_routes",
+        "importance_shap": 0.05987
+      },
+      {
+        "variable": "LST_estivale",
+        "importance_shap": 0.04103
+      },
+      {
+        "variable": "densite_lisiere",
+        "importance_shap": 0.0331
+      },
+      {
+        "variable": "MHC_hauteur_canopee",
+        "importance_shap": 0.03193
+      },
+      {
+        "variable": "distance_milieu_humide",
+        "importance_shap": 0.03037
+      },
+      {
+        "variable": "TWI",
+        "importance_shap": 0.02296
+      },
+      {
+        "variable": "classe_age",
+        "importance_shap": 0.02243
+      },
+      {
+        "variable": "densite_peuplement",
+        "importance_shap": 0.01196
+      }
+    ],
+    "n_echantillon": 2000,
+    "base_value": 0.5002,
+    "npz": "outputs/models/shap_habitat.npz"
+  },
+  "diagnostic_elevation": {
+    "r2_elevation_xy": 0.3569,
+    "corr_elevation_x": 0.4185,
+    "corr_elevation_y": -0.4023,
+    "elevation_sans_coords": {
+      "importance": 0.1145,
+      "rang": 1
+    },
+    "elevation_avec_coords": {
+      "importance": 0.02995,
+      "rang": 1
+    },
+    "coords": {
+      "x": {
+        "importance": 0.01799,
+        "rang": 3
+      },
+      "y": {
+        "importance": 0.02477,
+        "rang": 2
+      }
+    },
+    "auc_habitat": 0.859,
+    "auc_habitat_xy": 0.8421,
+    "importance_avec_coords": [
+      {
+        "variable": "elevation",
+        "importance": 0.02995,
+        "ecart_type": 0.00173
+      },
+      {
+        "variable": "y",
+        "importance": 0.02477,
+        "ecart_type": 0.00222
+      },
+      {
+        "variable": "x",
+        "importance": 0.01799,
+        "ecart_type": 0.00199
+      },
+      {
+        "variable": "prop_feuillu_melange",
+        "importance": 0.00873,
+        "ecart_type": 0.00052
+      },
+      {
+        "variable": "densite_routes",
+        "importance": 0.00871,
+        "ecart_type": 0.00092
+      },
+      {
+        "variable": "distance_milieu_humide",
+        "importance": 0.00677,
+        "ecart_type": 0.00076
+      },
+      {
+        "variable": "LST_estivale",
+        "importance": 0.00586,
+        "ecart_type": 0.00045
+      },
+      {
+        "variable": "MHC_hauteur_canopee",
+        "importance": 0.00536,
+        "ecart_type": 0.00107
+      },
+      {
+        "variable": "densite_lisiere",
+        "importance": 0.00476,
+        "ecart_type": 0.00055
+      },
+      {
+        "variable": "classe_age",
+        "importance": 0.00337,
+        "ecart_type": 0.00022
+      },
+      {
+        "variable": "TWI",
+        "importance": 0.00267,
+        "ecart_type": 0.00036
+      },
+      {
+        "variable": "densite_peuplement",
+        "importance": 0.00221,
+        "ecart_type": 0.0003
+      }
+    ]
+  },
+  "rf_joblib": "outputs/models/rf.joblib",
+  "rf_habitat_joblib": "outputs/models/rf_habitat.joblib",
+  "pdp": "outputs/models/pdp_habitat_rapport.json"
+}

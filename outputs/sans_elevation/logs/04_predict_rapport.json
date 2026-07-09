@@ -1,0 +1,23 @@
+{
+  "script": "04_predict",
+  "horodatage": "2026-07-09T09:37:31",
+  "tss_detection_fixee": 0.7825,
+  "seuil_detection_fixee": 0.8636,
+  "detection_standard": {
+    "minutes_apres_coucher": 44.4329,
+    "phase_lune": 15.239,
+    "log_duree": 2.8315,
+    "jour_julien": 175.0
+  },
+  "n_pixels_valides": 377474788,
+  "pct_mess_negatif": 5.55,
+  "cartes": {
+    "proba": "outputs/exploration_sans_elevation/maps/proba_5m.tif",
+    "incertitude": "outputs/exploration_sans_elevation/maps/incertitude_5m.tif",
+    "mess": "outputs/exploration_sans_elevation/maps/mess_5m.tif"
+  },
+  "seuil_proba": 0.8636,
+  "effort_seuil": 0.0,
+  "n_hotspots": 8,
+  "hotspots_gpkg": "outputs/sans_elevation/tables/hotspots.gpkg"
+}

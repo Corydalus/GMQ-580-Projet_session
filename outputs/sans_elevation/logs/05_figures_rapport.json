@@ -1,0 +1,17 @@
+{
+  "script": "05_figures",
+  "horodatage": "2026-07-09T10:20:50",
+  "figures": {
+    "localisation": "outputs/commun/figures/localisation.png",
+    "observations": "outputs/commun/figures/prive/carte_observations.png",
+    "checklists": "outputs/commun/figures/prive/carte_checklists.png",
+    "checklists_detection": "outputs/commun/figures/prive/carte_checklists_detection.png",
+    "carte_proba": "outputs/sans_elevation/figures/carte_proba.png",
+    "carte_incertitude": "outputs/sans_elevation/figures/carte_incertitude.png",
+    "carte_mess": "outputs/sans_elevation/figures/carte_mess.png",
+    "importance": "outputs/sans_elevation/figures/importance_habitat.png",
+    "pdp": "outputs/sans_elevation/figures/pdp_habitat.png",
+    "metriques_cv": "outputs/sans_elevation/figures/metriques_cv.png",
+    "shap": "outputs/sans_elevation/figures/shap_habitat.png"
+  }
+}

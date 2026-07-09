@@ -1,0 +1,30 @@
+{
+  "script": "02_ebird",
+  "horodatage": "2026-07-08T10:29:28",
+  "n_checklists_total": 2914208,
+  "n_apres_filtres": 22705,
+  "n_presences_filtres": 160,
+  "bandes_covariables": [
+    "MHC_hauteur_canopee",
+    "TWI",
+    "densite_lisiere",
+    "prop_feuillu_melange",
+    "densite_routes",
+    "LST_estivale",
+    "classe_age",
+    "densite_peuplement",
+    "distance_milieu_humide",
+    "elevation"
+  ],
+  "n_hors_couverture_stack": 5265,
+  "n_sans_heure": 0,
+  "n_final": 17440,
+  "n_presences": 148,
+  "n_absences": 17292,
+  "ratio_presence": 0.0085,
+  "annee_min": 2010,
+  "annee_max": 2025,
+  "taux_incomplets_pct": 23.19,
+  "stack": "data/processed/stack_5m.tif",
+  "sortie": "data/processed/table_modele.parquet"
+}

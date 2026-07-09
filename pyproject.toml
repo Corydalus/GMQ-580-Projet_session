@@ -26,6 +26,9 @@ dependencies = [
     "dask[distributed]>=2024.1",  # calcul chunké + LocalCluster multi-cœurs (dashboard)
     "pyyaml>=6.0",       # lecture de config.yaml
     "pydantic>=2.6",     # validation typée de la config
+    "whitebox>=2.3.6",
+    "shap>=0.46",        # valeurs de Shapley (TreeExplainer) — interprétation du RF (J5/J7)
+    "numba>=0.60",       # dépendance de shap ; plancher requis pour Python 3.13 + numpy 2.x
 ]
 
 [project.optional-dependencies]

@@ -1,0 +1,230 @@
+{
+  "script": "06_exploration",
+  "horodatage": "2026-07-09T09:07:26",
+  "baseline": {
+    "best_params": {
+      "max_depth": 10,
+      "max_features": "sqrt",
+      "min_samples_leaf": 2,
+      "n_estimators": 639
+    },
+    "best_score_cv": 0.859,
+    "auc_moy": 0.859,
+    "auc_std": 0.032,
+    "tss_moy": 0.6774,
+    "tss_std": 0.0369,
+    "importance": [
+      {
+        "variable": "elevation",
+        "importance": 0.1145,
+        "ecart_type": 0.00718
+      },
+      {
+        "variable": "prop_feuillu_melange",
+        "importance": 0.01633,
+        "ecart_type": 0.00084
+      },
+      {
+        "variable": "densite_routes",
+        "importance": 0.01417,
+        "ecart_type": 0.00125
+      },
+      {
+        "variable": "LST_estivale",
+        "importance": 0.00914,
+        "ecart_type": 0.00053
+      },
+      {
+        "variable": "densite_lisiere",
+        "importance": 0.00873,
+        "ecart_type": 0.00068
+      },
+      {
+        "variable": "MHC_hauteur_canopee",
+        "importance": 0.00821,
+        "ecart_type": 0.00121
+      },
+      {
+        "variable": "distance_milieu_humide",
+        "importance": 0.00753,
+        "ecart_type": 0.00075
+      },
+      {
+        "variable": "TWI",
+        "importance": 0.00496,
+        "ecart_type": 0.00041
+      },
+      {
+        "variable": "classe_age",
+        "importance": 0.00492,
+        "ecart_type": 0.00037
+      },
+      {
+        "variable": "densite_peuplement",
+        "importance": 0.00408,
+        "ecart_type": 0.00043
+      }
+    ],
+    "shap_moy": {
+      "MHC_hauteur_canopee": 0.03193,
+      "TWI": 0.02296,
+      "densite_lisiere": 0.0331,
+      "prop_feuillu_melange": 0.07531,
+      "densite_routes": 0.05987,
+      "LST_estivale": 0.04103,
+      "classe_age": 0.02243,
+      "densite_peuplement": 0.01196,
+      "distance_milieu_humide": 0.03037,
+      "elevation": 0.19643
+    }
+  },
+  "sans_elevation": {
+    "best_params": {
+      "max_depth": 10,
+      "max_features": 0.5,
+      "min_samples_leaf": 6,
+      "n_estimators": 776
+    },
+    "best_score_cv": 0.7531,
+    "auc_moy": 0.7531,
+    "auc_std": 0.085,
+    "tss_moy": 0.4911,
+    "tss_std": 0.1315,
+    "importance": [
+      {
+        "variable": "densite_routes",
+        "importance": 0.09279,
+        "ecart_type": 0.01234
+      },
+      {
+        "variable": "prop_feuillu_melange",
+        "importance": 0.07554,
+        "ecart_type": 0.00415
+      },
+      {
+        "variable": "LST_estivale",
+        "importance": 0.05336,
+        "ecart_type": 0.00699
+      },
+      {
+        "variable": "densite_lisiere",
+        "importance": 0.03336,
+        "ecart_type": 0.0032
+      },
+      {
+        "variable": "MHC_hauteur_canopee",
+        "importance": 0.01435,
+        "ecart_type": 0.00193
+      },
+      {
+        "variable": "TWI",
+        "importance": 0.01427,
+        "ecart_type": 0.00149
+      },
+      {
+        "variable": "distance_milieu_humide",
+        "importance": 0.0102,
+        "ecart_type": 0.00097
+      },
+      {
+        "variable": "classe_age",
+        "importance": 0.00719,
+        "ecart_type": 0.00085
+      },
+      {
+        "variable": "densite_peuplement",
+        "importance": 0.00425,
+        "ecart_type": 0.00033
+      }
+    ],
+    "shap_moy": {
+      "MHC_hauteur_canopee": 0.04275,
+      "TWI": 0.04267,
+      "densite_lisiere": 0.06499,
+      "prop_feuillu_melange": 0.12124,
+      "densite_routes": 0.09203,
+      "LST_estivale": 0.07492,
+      "classe_age": 0.03017,
+      "densite_peuplement": 0.01512,
+      "distance_milieu_humide": 0.03464
+    }
+  },
+  "elevation_residualisee": {
+    "best_params": {
+      "max_depth": 20,
+      "max_features": 0.3,
+      "min_samples_leaf": 10,
+      "n_estimators": 775
+    },
+    "best_score_cv": 0.7269,
+    "auc_moy": 0.7269,
+    "auc_std": 0.1379,
+    "tss_moy": 0.4487,
+    "tss_std": 0.1973,
+    "importance": [
+      {
+        "variable": "elevation_residuelle",
+        "importance": 0.05251,
+        "ecart_type": 0.00529
+      },
+      {
+        "variable": "densite_routes",
+        "importance": 0.02152,
+        "ecart_type": 0.00329
+      },
+      {
+        "variable": "prop_feuillu_melange",
+        "importance": 0.02131,
+        "ecart_type": 0.00116
+      },
+      {
+        "variable": "densite_lisiere",
+        "importance": 0.00838,
+        "ecart_type": 0.00126
+      },
+      {
+        "variable": "LST_estivale",
+        "importance": 0.00547,
+        "ecart_type": 0.00063
+      },
+      {
+        "variable": "MHC_hauteur_canopee",
+        "importance": 0.00334,
+        "ecart_type": 0.00071
+      },
+      {
+        "variable": "distance_milieu_humide",
+        "importance": 0.00241,
+        "ecart_type": 0.00034
+      },
+      {
+        "variable": "classe_age",
+        "importance": 0.00201,
+        "ecart_type": 0.00031
+      },
+      {
+        "variable": "TWI",
+        "importance": 0.00169,
+        "ecart_type": 0.00034
+      },
+      {
+        "variable": "densite_peuplement",
+        "importance": 0.00119,
+        "ecart_type": 0.00028
+      }
+    ],
+    "shap_moy": {
+      "MHC_hauteur_canopee": 0.0349,
+      "TWI": 0.02954,
+      "densite_lisiere": 0.05181,
+      "prop_feuillu_melange": 0.09133,
+      "densite_routes": 0.06938,
+      "LST_estivale": 0.05056,
+      "classe_age": 0.02565,
+      "densite_peuplement": 0.01755,
+      "distance_milieu_humide": 0.03466,
+      "elevation_residuelle": 0.11718
+    }
+  },
+  "figure": "outputs/figures/exploration_elevation.png"
+}

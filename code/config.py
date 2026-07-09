@@ -52,17 +52,27 @@ def _mois_valides(v: list[int]) -> list[int]:
 
 class EbirdCfg(_Base):
     mois_saison: list[int]
+    annee_min: int | None = None  # plancher d'année des checklists (None = aucun)
     duree_max_min: float = Field(gt=0)
     distance_max_km: float = Field(gt=0)
     observateurs_max: int = Field(gt=0)
     protocoles: list[str]
     listes_completes: bool = True
     buffer_m: float = Field(30, gt=0)
+    fuseau: str = "America/Toronto"  # fuseau local (DST) pour minutes_apres_coucher
+    zerofill_csv: str = "data/processed/ebird/zerofill_engoulevent_bois_pourri.csv"
 
     @field_validator("mois_saison")
     @classmethod
     def _mois(cls, v: list[int]) -> list[int]:
         return _mois_valides(v)
+
+    @field_validator("annee_min")
+    @classmethod
+    def _annee(cls, v: int | None) -> int | None:
+        if v is not None and not (1900 <= v <= 2100):
+            raise ValueError("annee_min doit être null ou une année plausible (1900..2100)")
+        return v
 
 
 class ClimatStacCfg(_Base):
@@ -72,6 +82,10 @@ class ClimatStacCfg(_Base):
     annees: list[int] | None = None
     couverture_nuageuse_max: float = Field(60, ge=0, le=100)
     reducteur: str = "median"
+    resolution_native_m: float = Field(30, gt=0)  # résolution native Landsat
+    tuile_px: int = Field(1024, gt=0)  # taille de tuile (px) pour checkpoint/reprise
+    combler_trous: bool = True  # interpolation locale des trous du produit ST (USGS fill)
+    comblement_max_px: int = Field(100, gt=0)  # distance de recherche max (px natifs)
 
     @field_validator("mois")
     @classmethod
@@ -86,18 +100,47 @@ class ClimatStacCfg(_Base):
         return v
 
 
+class LidarCfg(_Base):
+    twi_breach_dist_px: int = Field(100, gt=0)  # percement max des dépressions (cellules), TWI
+
+
+class FocalCfg(_Base):
+    lisiere_m: float = Field(1000, gt=0)  # var 3, densité de lisière forêt-ouvert
+    feuillu_m: float = Field(500, gt=0)   # var 4, proportion feuillu/mélangé
+    routes_m: float = Field(1000, gt=0)   # var 5, densité de routes
+
+
 class ModeleCfg(_Base):
     random_state: int = 42
     bloc_cv_km: float = Field(10, gt=0)
     n_folds: int = Field(5, ge=2)
     n_iter_recherche: int = Field(20, ge=1)
+    cv_stratifie: bool = True  # True = StratifiedGroupKFold (imbalance) ; False = GroupKFold
+    shap_echantillon: int = Field(2000, ge=0)  # taille d'échantillon SHAP (0 = toutes les checklists)
+    diagnostic_spatial: bool = True  # ajoute x,y en diagnostic (test du proxy spatial de l'élévation)
+
+
+class HotspotsCfg(_Base):
+    n: int = Field(8, ge=1)  # nombre de hotspots à retenir
+    # cellules 1 km d'effort eBird ≤ ce quantile = « faible effort » ; ↑ élargit la fenêtre
+    effort_quantile: float = Field(0.35, ge=0, le=1)
 
 
 class CheminsCfg(_Base):
     raw: str = "data/raw"
     interim: str = "data/interim"
     processed: str = "data/processed"
-    outputs: str = "outputs"
+    outputs: str = "outputs"                  # racine des sorties de la MÉTHODE courante
+    commun: str = "outputs/commun"            # rendus partagés (localisation, QC LST, cartes eBird, data-prep)
+    comparaison: str = "outputs/comparaison"  # figures inter-méthodes (06/07)
+
+
+class SourcesCfg(_Base):
+    ecoforestiere: str = "data/processed/ebird/peuplement_ecoforestier.gpkg"
+    ecoforestiere_couche: str = "pee"
+    routes: str = "data/raw/Routes_AQreseauPlus_ESRI(SHP)/Reseau_routier.shp"
+    milieux_humides: str = "data/raw/mh_potentiel_2023.gpkg"
+    milieux_humides_couche: str = "mh_potentiel_qc"
 
 
 class CalculCfg(_Base):
@@ -118,6 +161,32 @@ class CalculCfg(_Base):
 class VariablesCfg(_Base):
     routes_par_type: bool = False
     milieux_humides_par_type: bool = False
+    # Variables d'habitat à retirer du modèle (exploration : p. ex. ["elevation"]).
+    # [] = jeu complet. Voir code/03_model.features_effectifs et 04_predict.
+    exclure: list[str] = Field(default_factory=list)
+
+
+class FiguresCfg(_Base):
+    # Classes ClsRte (AQréseau+) tracées sur les cartes de résultat : grandes voies
+    # uniquement (on écarte « Locale », « Sans classe », etc.) pour la lisibilité.
+    routes_classes_principales: list[str] = Field(
+        default_factory=lambda: [
+            "Autoroute", "Nationale", "Régionale", "Artère",
+            "Collectrice municipale", "Collectrice de transit",
+        ]
+    )
+    # Fenêtre de détection [début, fin] en minutes après le coucher du soleil (crépuscule → nuit).
+    # Sert à ne cartographier que l'effort eBird pertinent pour un nocturne (engoulevent).
+    fenetre_detection_apres_coucher_min: list[float] = Field(
+        default_factory=lambda: [-60.0, 450.0]
+    )
+
+    @field_validator("fenetre_detection_apres_coucher_min")
+    @classmethod
+    def _fenetre(cls, v: list[float]) -> list[float]:
+        if len(v) != 2 or v[0] >= v[1]:
+            raise ValueError("fenetre_detection_apres_coucher_min doit être [début, fin] avec début < fin")
+        return v
 
 
 class Config(_Base):
@@ -125,10 +194,15 @@ class Config(_Base):
     zone_etude: ZoneEtudeCfg
     ebird: EbirdCfg
     climat_stac: ClimatStacCfg
+    lidar: LidarCfg = LidarCfg()
+    focal: FocalCfg = FocalCfg()
     modele: ModeleCfg
+    hotspots: HotspotsCfg = HotspotsCfg()
     chemins: CheminsCfg
+    sources: SourcesCfg = SourcesCfg()
     calcul: CalculCfg = CalculCfg()
     variables: VariablesCfg = VariablesCfg()
+    figures: FiguresCfg = FiguresCfg()
 
 
 def load_config(path: str | Path = CONFIG_DEFAUT) -> Config:

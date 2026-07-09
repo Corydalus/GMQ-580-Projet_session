@@ -1,0 +1,37 @@
+{
+  "script": "02_climate_stac",
+  "horodatage": "2026-07-07T20:48:36",
+  "annees": [
+    2013,
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "mois": [
+    6,
+    7
+  ],
+  "reducteur": "median",
+  "resolution_native_m": 30.0,
+  "tuile_px": 1024,
+  "n_scenes": 139,
+  "n_tuiles": 16,
+  "n_tuiles_reprises": 16,
+  "pct_manquant_brut": 0.63,
+  "n_pixels_combles": 72985,
+  "sortie": "data/interim/lst_estival_5m.tif",
+  "pct_manquant": 0.0,
+  "lst_c_min": 14.73,
+  "lst_c_moy": 26.4,
+  "lst_c_max": 51.76,
+  "n_clair_median": 42
+}
