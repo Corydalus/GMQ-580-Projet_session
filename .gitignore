@@ -29,6 +29,8 @@ outputs/logs/
 # Garder les figures légères et les tableaux CSV/parquet de résultats
 !outputs/figures/
 !outputs/tables/
+# ...SAUF les cartes de points eBird (espèce en péril + confidentialité) : jamais versionnées
+outputs/figures/prive/
 
 # ── Modèles sérialisés ──────────────────────────────────────────────────────
 *.joblib
