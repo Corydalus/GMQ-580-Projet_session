@@ -85,7 +85,7 @@ flowchart TD
 | `05_figures.py` | Cartes, importance, PDP, SHAP, métriques CV, QC LST | PNG exports |
 | `06_` · `07_…elevation.py` | Exploration du rôle de l'élévation (retrait / résidualisation) + figures inter-méthodes | PNG + métriques |
 | `08_figures_rapport.py` | Figures de synthèse : performance des 4 configs, dominance de la détection, ROC par fold, entonnoir eBird, diagrammes de pipeline | PNG exports |
-| `09_figures_hotspots.py` | Caractéristiques d'habitat des hotspots (avec vs sans élévation) : profil standardisé, distributions par variable, carte sur l'élévation | PNG exports |
+| `09_figures_hotspots.py` | Habitat des hotspots (avec vs sans élévation) comparé aux **présences réelles** (tuiles 1 km) : profil standardisé, distributions, carte sur l'élévation | PNG exports |
 
 ## Librairies principales (ou stack)
 Projet Python géré avec **`uv`** (`pyproject.toml` + `uv.lock` versionné pour la reproductibilité).
