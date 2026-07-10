@@ -1,0 +1,47 @@
+{
+  "script": "09_figures_hotspots",
+  "horodatage": "2026-07-10T10:01:34",
+  "n_hotspots": {
+    "avec": 8,
+    "sans": 8
+  },
+  "elevation_moy_m": {
+    "avec": 93.5,
+    "sans": 146.0
+  },
+  "elevation_std_m": {
+    "avec": 15.8,
+    "sans": 65.1
+  },
+  "moyennes_habitat": {
+    "avec": {
+      "MHC_hauteur_canopee": 8.412,
+      "TWI": 7.037,
+      "densite_lisiere": 0.006,
+      "prop_feuillu_melange": 0.862,
+      "densite_routes": 1.037,
+      "LST_estivale": 26.179,
+      "classe_age": 1.447,
+      "densite_peuplement": 65.553,
+      "distance_milieu_humide": 19.723,
+      "elevation": 93.466
+    },
+    "sans": {
+      "MHC_hauteur_canopee": 8.516,
+      "TWI": 7.084,
+      "densite_lisiere": 0.013,
+      "prop_feuillu_melange": 0.646,
+      "densite_routes": 1.31,
+      "LST_estivale": 26.479,
+      "classe_age": 1.182,
+      "densite_peuplement": 49.82,
+      "distance_milieu_humide": 100.346,
+      "elevation": 146.039
+    }
+  },
+  "figures": [
+    "hotspots_profil_habitat.png",
+    "hotspots_distributions.png",
+    "hotspots_carte_elevation.png"
+  ]
+}
