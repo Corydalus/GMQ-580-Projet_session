@@ -2,6 +2,8 @@
 **Équipe :** Alexandre Chéné
 *Modèle de distribution d'espèce (SDM) par Random Forest sur checklists eBird zero-fillées, à 5 m de résolution, sur une MRC du Québec méridional. — GMQ-580, Géoinformatique II, Session 3.*
 
+📄 **Rapport final : [`CHENE_ALEXANDRE_Rapport_GMQ580_Engoulevent.pdf`](CHENE_ALEXANDRE_Rapport_GMQ580_Engoulevent.pdf)**
+
 ## Problématique
 Quelles variables environnementales structurent la présence de l'Engoulevent bois-pourri à l'échelle d'une MRC du Québec méridional, et où le modèle prédit-il des habitats favorables non encore documentés par eBird ?
 
@@ -128,7 +130,7 @@ Projet Python géré avec **`uv`** (`pyproject.toml` + `uv.lock` versionné pour
 | Exploration du rôle de l'élévation (2 méthodes : avec / sans) | ✅ Complété |
 | `08_figures_rapport.py` — figures de synthèse (performance, ROC, entonnoir, pipeline) | ✅ Complété |
 | `09_figures_hotspots.py` — caractéristiques d'habitat des hotspots (avec vs sans) | ✅ Complété |
-| Rapport final | ⏳ En cours |
+| Rapport final | ✅ Complété |
 
 ## Décisions méthodologiques
 - **Modèle unique Random Forest présence-absence** (`class_weight="balanced"`) plutôt que MaxEnt : les listes complètes eBird zero-fillées (`auk_zerofill`) fournissent des absences confirmées, plus robustes que les méthodes présence-seule. MaxEnt retiré pour concentrer l'effort sur un pipeline reproductible et bien validé.
